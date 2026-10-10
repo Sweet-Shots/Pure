@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en" class="font-serif">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- CSP is sent as a response header by main/protocol.js -->
+    <title>Reader mode</title>
+    <link rel="stylesheet" href="./reader.css" />
+  </head>
+  <body>
+    <header id="reader-toolbar" role="toolbar" aria-label="Reader mode">
+      <button type="button" class="rt-btn rt-exit" data-action="reader-exit" title="Exit reader mode (F9)" aria-label="Exit reader mode">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+        <span>Exit reader</span>
+      </button>
+      <div class="rt-group" role="group" aria-label="Font">
+        <button type="button" class="rt-btn rt-font rt-serif" data-action="font-serif" title="Serif font" aria-label="Serif font">Aa</button>
+        <button type="button" class="rt-btn rt-font rt-sans" data-action="font-sans" title="Sans-serif font" aria-label="Sans-serif font">Aa</button>
+      </div>
+      <div class="rt-group" role="group" aria-label="Text size">
+        <button type="button" class="rt-btn rt-icon" data-action="size-down" title="Smaller text" aria-label="Smaller text">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/></svg>
+        </button>
+        <svg class="icon rt-size-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m15 16 2.536-7.328a1.02 1.02 1 0 1 1.928 0L22 16"/><path d="M15.697 14h5.606"/><path d="m2 16 4.039-9.69a.5.5 0 0 1 .923 0L11 16"/><path d="M3.304 13h6.392"/></svg>
+        <button type="button" class="rt-btn rt-icon" data-action="size-up" title="Larger text" aria-label="Larger text">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="reader-main">
+      <article id="reader-article" hidden>
+        <h1 id="reader-title"></h1>
+        <p id="reader-meta"></p>
+        <div id="reader-content"></div>
+      </article>
+
+      <div id="reader-error" role="alert" hidden>
+        <svg class="icon reader-error-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v16"/><path d="M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+        <h1>This page can&#39;t be shown in reader mode</h1>
+        <p>The article may have expired, or the page has no readable text. Go back to view the original.</p>
+        <button type="button" class="rt-btn rt-primary" data-action="reader-exit">Back to the page</button>
+      </div>
+    </main>
+
+    <script src="./vendor/purify.min.js"></script>
+    <script src="./reader.js"></script>
+  </body>
+</html>

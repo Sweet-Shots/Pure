@@ -1,0 +1,205 @@
+/* ═══════════════════════════════════════════════════════════
+   Pure Browser — design tokens, reset and base styles
+   (single token set; JS overrides --accent / --accent-dim inline)
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* Accent (user-configurable) */
+  --accent:      #4f8ef7;
+  --accent-dim:  #1e3a6e;
+
+  /* Backgrounds, darkest → lightest */
+  --bg-page:     #0a0a0a;   /* page area behind the native view */
+  --bg-deep:     #0e0e0e;
+  --bg-input:    #141414;
+  --bg-chrome:   #1a1a1a;   /* title bar, toolbar, bars */
+  --bg-raised:   #1c1c1c;   /* dropdowns */
+  --bg-tab:      #252525;   /* hover fills, chips */
+  --bg-hover:    rgba(255, 255, 255, 0.05);
+  --bg-active:   rgba(255, 255, 255, 0.08);
+
+  /* Borders */
+  --border:      #2e2e2e;
+  --border-strong: #3a3a3a;
+
+  /* Text levels (all ≥ 4.5:1 on --bg-chrome except --text-faint, decoration only) */
+  --text:        #d0d0d0;
+  --text-dim:    #8c8c8c;
+  --text-faint:  #606060;
+
+  /* Status colours */
+  --danger:      #e05c5c;
+  --success:     #5cb85c;
+
+  /* Radii */
+  --radius-sm:   4px;
+  --radius:      6px;
+  --radius-lg:   8px;
+
+  /* Metrics */
+  --tab-h:       34px;   /* title bar height */
+  --bar-h:       36px;   /* toolbar height */
+
+  /* Type */
+  --font-ui:   'Segoe UI Variable Text', 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'Cascadia Code', 'Cascadia Mono', Consolas, monospace;
+
+  color-scheme: dark;
+
+  /* Theme-dependent extras (dark values = 2.0 look, 1:1) */
+  --on-accent:     #fff;                       /* text/icons on accent or danger fills */
+  --accent-text:   var(--accent);              /* accent used as small text */
+  --shadow-pop:    0 8px 24px rgba(0, 0, 0, 0.45);
+  --spinner-track: var(--accent-dim);
+  --incognito-tint: #1f1515;                   /* left end of the incognito title-bar gradient */
+  --incognito-icon: #ff6b6b;
+  --welcome-bg:    linear-gradient(135deg, #0e0e0e 0%, #1a1a1a 50%, #161616 100%);
+  --welcome-label: #a0a0a0;
+  --welcome-status:#808080;
+}
+
+/* Incognito: red accent (JS may also set it inline) */
+html.incognito {
+  --accent:      #c04040;
+  --accent-dim:  #6b2020;
+  --border-incognito: #3a2020;
+}
+
+/* ── Light theme (nativeTheme.themeSource drives prefers-color-scheme) ── */
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg-page:     #ffffff;
+    --bg-deep:     #ececec;
+    --bg-input:    #ffffff;
+    --bg-chrome:   #f5f5f5;
+    --bg-raised:   #ffffff;
+    --bg-tab:      #e4e4e4;
+    --bg-hover:    rgba(0, 0, 0, 0.05);
+    --bg-active:   #ffffff;
+
+    --border:      #e2e2e2;
+    --border-strong: #cfcfcf;
+
+    --text:        #1f1f1f;
+    --text-dim:    #5c5c5c;   /* 6.1:1 on #f5f5f5 */
+    --text-faint:  #9a9a9a;
+
+    --danger:      #c93b3b;
+    --success:     #2c8a3e;
+
+    --accent-text:   color-mix(in srgb, var(--accent) 68%, #000);
+    --shadow-pop:    0 8px 24px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);
+    --spinner-track: color-mix(in srgb, var(--accent) 25%, transparent);
+    --incognito-tint: #fbe4e4;
+    --incognito-icon: #c03535;
+    --welcome-bg:    linear-gradient(135deg, #f7f7f7 0%, #ffffff 50%, #f2f2f2 100%);
+    --welcome-label: #5c5c5c;
+    --welcome-status:#6a6a6a;
+
+    color-scheme: light;
+  }
+
+  html.incognito {
+    --border-incognito: #efc9c9;
+  }
+}
+
+/* ── Reset ── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-deep);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  -webkit-app-region: no-drag;
+}
+
+input {
+  -webkit-app-region: no-drag;
+  user-select: text;
+}
+
+svg {
+  display: block;
+  flex-shrink: 0;
+}
+
+/* Icons: Lucide, inline SVG (see js/icons.js). One stroke width for the whole UI; size per context. */
+.icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  stroke-width: 1.75;
+}
+
+/* Optical weight: Lucide strokes scale with the icon, so smaller icons get a slightly heavier
+   stroke-width to keep the rendered line at ~1.1px everywhere (16px x 1.75/24 = 1.17px). */
+#lock-icon .icon,
+.sug-icon .icon,
+.tab-fallback,
+#btn-new-tab .icon,
+#findbar .icon,
+svg.bookmark-favicon {
+  stroke-width: 2;
+}
+
+#win-controls .icon,
+.tab-audio .icon,
+.tab-close .icon,
+.tab-sleeping.icon {
+  stroke-width: 2.25;
+}
+
+.bookmark-delete .icon {
+  stroke-width: 2.5;
+}
+
+/* ── Focus ── */
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* ── Reduced motion: kill transitions & animations (except the tab spinner) ── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0s !important;
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+
+  .tab-favicon-wrapper.loading {
+    animation-duration: 1.6s !important;
+  }
+}

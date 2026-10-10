@@ -1,0 +1,93 @@
+/* ═══════════════════════════════════════════════════════════
+   Find bar (takes real layout space above the page)
+   Open state: #findbar.open (or legacy .active) / body.find-open
+   ═══════════════════════════════════════════════════════════ */
+
+#findbar {
+  display: none;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 2px;
+  height: 34px;
+  padding: 0 8px;
+  background: var(--bg-chrome);
+  border-bottom: 1px solid var(--border);
+}
+
+#findbar.open,
+#findbar.active,
+body.find-open #findbar {
+  display: flex;
+}
+
+#find-input {
+  width: 220px;
+  height: 26px;
+  padding: 0 8px 0 28px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  color: var(--text);
+  font-size: 12px;
+  transition: border-color 0.15s;
+}
+
+#find-input::placeholder {
+  color: var(--text-dim);
+}
+
+#find-input:focus {
+  border-color: var(--accent);
+}
+
+#find-input:focus-visible {
+  outline: none;
+}
+
+#find-count {
+  min-width: 52px;
+  padding: 0 4px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+  text-align: center;
+}
+
+#findbar button {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.1s, color 0.1s;
+}
+
+#findbar button:hover {
+  background: var(--bg-tab);
+  color: var(--text);
+}
+
+#findbar button .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.find-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.find-icon {
+  position: absolute;
+  left: 9px;
+  width: 13px;
+  height: 13px;
+  color: var(--text-dim);
+  pointer-events: none;
+}

@@ -1,0 +1,110 @@
+/* ═══════════════════════════════════════════════════════════
+   Bookmarks bar (horizontal, under the toolbar)
+   Generated markup: div.bookmark-item[data-url] › img.bookmark-favicon,
+   span.bookmark-title, button.bookmark-delete
+   ═══════════════════════════════════════════════════════════ */
+
+#bookmark-sidebar {
+  display: none;
+  flex-shrink: 0;
+  height: 36px;
+  background: var(--bg-chrome);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+#bookmark-sidebar.active {
+  display: flex;
+}
+
+#bookmark-sidebar::-webkit-scrollbar {
+  height: 4px;
+}
+
+#bookmark-sidebar::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+
+#bookmark-list {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+  min-width: 100%;
+}
+
+/* Empty bar hint */
+#bookmark-list:empty::before {
+  content: 'No bookmarks yet — press Ctrl+D to bookmark a page';
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.bookmark-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 4px 0 8px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-size: 12px;
+  color: var(--text);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.1s;
+}
+
+.bookmark-item:hover {
+  background: var(--bg-tab);
+}
+
+.bookmark-favicon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  object-fit: contain;
+  color: var(--text-dim);
+}
+
+.bookmark-title {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bookmark-delete {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.1s, background-color 0.1s, color 0.1s;
+}
+
+.bookmark-item:hover .bookmark-delete,
+.bookmark-delete:focus-visible {
+  opacity: 1;
+}
+
+.bookmark-delete:hover {
+  background: var(--danger);
+  color: var(--on-accent);
+}
+
+.bookmark-delete .icon {
+  width: 10px;
+  height: 10px;
+}

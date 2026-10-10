@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Home</title>
+    <link rel="stylesheet" href="./home.css" />
+  </head>
+  <body>
+    <!-- ── Top corners: wordmark (left) · Customize (right) ── -->
+    <header class="frame-top">
+      <h1 class="logo" aria-label="Pure">P U R E</h1>
+      <button type="button" class="customize-btn normal-only" data-action="customize" aria-pressed="false"><svg class="icon customize-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg><span>Customize</span></button>
+    </header>
+
+    <main class="container">
+      <!-- ── Greeting, centered over the search (incognito: "Purely Hidden.") ── -->
+      <div class="hero">
+        <div class="greeting normal-only" id="greeting" aria-live="off"></div>
+        <div class="incognito-badge"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14 18a2 2 0 0 0-4 0"/><path d="m19 11-2.11-6.657a2 2 0 0 0-2.752-1.148l-1.276.61A2 2 0 0 1 12 4H8.5a2 2 0 0 0-1.925 1.456L5 11"/><path d="M2 11h20"/><circle cx="17" cy="18" r="3"/><circle cx="7" cy="18" r="3"/></svg><span>Purely Hidden.</span></div>
+        <div class="slogan" id="slogan" aria-live="off">Nothing more. Nothing less.</div>
+      </div>
+
+      <!-- ── Search ── -->
+      <div class="search-box">
+        <div class="search-field">
+          <input
+            type="text"
+            class="search-input"
+            id="search-input"
+            placeholder="Search or type a URL..."
+            autocomplete="off"
+            spellcheck="false"
+            aria-label="Search or type a URL"
+          />
+          <svg class="icon search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </div>
+      </div>
+
+      <!-- ── Quick links (hidden in incognito) ── -->
+      <nav class="quick-links normal-only" aria-label="Quick links">
+        <div id="quick-links"><!-- a.quick-link rendered by home.js --></div>
+        <button type="button" class="quick-link add" data-action="add-quick-link"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="M12 5v14"/></svg><span>Add</span></button>
+      </nav>
+
+      <!-- ── Hidden-widget tray (visible only while body.customizing) ── -->
+      <div class="widget-tray-wrap normal-only" aria-label="Hidden widgets">
+        <span class="widget-tray-label">Hidden widgets</span>
+        <div id="widget-tray" class="widget-tray"><!-- button[data-action="show-widget"][data-widget] rendered by home.js --></div>
+      </div>
+
+      <!-- ── Widget board (hidden in incognito). JS reorders the sections and sets [hidden]. ── -->
+      <div id="widget-board" class="widget-board normal-only">
+        <section class="widget widget-news" data-widget="news" aria-label="Daily brief">
+          <div class="widget-head">
+            <span class="widget-grip" title="Drag to reorder" aria-hidden="true"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>
+            <svg class="icon widget-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 18h-5"/><path d="M18 14h-8"/><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-4 0v-9a2 2 0 0 1 2-2h2"/><rect width="8" height="4" x="10" y="6" rx="1"/></svg>
+            <h2 class="widget-title">Daily brief</h2>
+            <button type="button" class="widget-hide" data-action="hide-widget" data-widget="news" title="Hide" aria-label="Hide news"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+          </div>
+          <div id="news-topics" class="news-topics" role="toolbar" aria-label="News topics"><!-- button.news-topic[data-topic] --></div>
+          <div id="news-list" class="news-list"><!-- a.news-lead + a.news-item --></div>
+          <div id="news-status" class="news-status" role="status"></div>
+        </section>
+
+        <section class="widget widget-weather" data-widget="weather" aria-label="Weather and time">
+          <div class="widget-head">
+            <span class="widget-grip" title="Drag to reorder" aria-hidden="true"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>
+            <svg class="icon widget-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 2v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="M20 12h2"/><path d="m19.07 4.93-1.41 1.41"/><path d="M15.947 12.65a4 4 0 0 0-5.925-4.128"/><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"/></svg>
+            <h2 class="widget-title">Weather</h2>
+            <button type="button" class="widget-hide" data-action="hide-widget" data-widget="weather" title="Hide" aria-label="Hide weather"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+          </div>
+          <div class="wx-main">
+            <div class="wx-temp" id="weather">--°C</div>
+            <div class="wx-clock clock" id="clock">--:--</div>
+          </div>
+          <div class="wx-sub">
+            <span class="weather-icon" id="weather-icon" aria-hidden="true" hidden></span>
+            <span id="weather-condition">--</span>
+          </div>
+          <div id="forecast" class="forecast"><!-- .forecast-day › .forecast-name, svg.icon, .forecast-temp --></div>
+        </section>
+
+        <section class="widget widget-reading" data-widget="reading" aria-label="Continue reading">
+          <div class="widget-head">
+            <span class="widget-grip" title="Drag to reorder" aria-hidden="true"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>
+            <svg class="icon widget-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v16"/><path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z"/></svg>
+            <h2 class="widget-title">Continue reading</h2>
+            <button type="button" class="widget-hide" data-action="hide-widget" data-widget="reading" title="Hide" aria-label="Hide continue reading"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+          </div>
+          <div id="reading-list" class="reading-list"><!-- a.reading-item › img.reading-favicon, .reading-title --></div>
+        </section>
+
+        <section class="widget widget-notes" data-widget="notes" aria-label="Notes">
+          <div class="widget-head">
+            <span class="widget-grip" title="Drag to reorder" aria-hidden="true"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>
+            <svg class="icon widget-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"/><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/></svg>
+            <h2 class="widget-title">Notes</h2>
+            <span id="notes-status" class="notes-status" role="status"></span>
+            <button type="button" class="widget-hide" data-action="hide-widget" data-widget="notes" title="Hide" aria-label="Hide notes"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+          </div>
+          <textarea id="notes-input" class="notes-input" placeholder="Jot something down…" aria-label="Notes" spellcheck="true"></textarea>
+        </section>
+      </div>
+
+    </main>
+
+    <!-- ── Bottom corners: version (left) · usage stats (right; JS text, [hidden] when off) ── -->
+    <footer class="frame-bottom">
+      <a id="home-version" class="home-version" href="pure://settings/#about" title="About Pure"></a>
+      <a id="home-stats" class="home-stats normal-only" href="pure://settings/#performance" title="Performance settings" role="status"></a>
+    </footer>
+
+    <!-- ── Add Quick Link modal ── -->
+    <div class="quick-link-modal" id="quick-link-modal" role="dialog" aria-modal="true" aria-labelledby="quick-link-modal-title">
+      <div class="quick-link-modal-content">
+        <h2 id="quick-link-modal-title">Add Quick Link</h2>
+        <input type="text" id="quick-link-title" placeholder="Title (e.g., GitHub)" aria-label="Title" autocomplete="off" />
+        <input type="text" id="quick-link-url" placeholder="URL (e.g., https://github.com)" aria-label="URL" autocomplete="off" spellcheck="false" />
+        <div class="quick-link-modal-buttons">
+          <button type="button" class="btn-cancel" data-action="close-quick-link">Cancel</button>
+          <button type="button" class="btn-add" data-action="save-quick-link">Add</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="./shared.js"></script>
+    <script src="./widgets.js"></script>
+    <script src="./home.js"></script>
+  </body>
+</html>

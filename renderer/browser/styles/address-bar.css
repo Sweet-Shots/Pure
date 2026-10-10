@@ -1,0 +1,511 @@
+/* ═══════════════════════════════════════════════════════════
+   Address bar: security icon, input, zoom pill, bookmark star,
+   suggestions dropdown
+   ═══════════════════════════════════════════════════════════ */
+
+#address-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ── Security / page-type button (inside the input, left) — opens #site-popover ── */
+#lock-icon {
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  z-index: 1;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.1s;
+}
+
+/* Only real sites (secure / insecure) have site info; the search and Pure-page states are inert */
+#lock-icon:not(.secure):not(.insecure),
+#lock-icon:disabled {
+  pointer-events: none;
+}
+
+#lock-icon:hover,
+#lock-icon[aria-expanded="true"] {
+  background: var(--bg-tab);
+}
+
+#lock-icon .icon {
+  display: none;
+  width: 14px;
+  height: 14px;
+}
+
+#lock-icon:not(.secure):not(.insecure):not(.internal) .ico-search,
+#lock-icon.secure .ico-lock,
+#lock-icon.insecure .ico-insecure,
+#lock-icon.internal .ico-internal {
+  display: block;
+}
+
+#lock-icon.secure   { color: var(--success); }
+#lock-icon.insecure { color: var(--danger); }
+#lock-icon.internal { color: var(--accent); }
+
+/* ── Input ── */
+#address-bar {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  padding: 0 10px 0 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-input);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+#address-bar::placeholder {
+  color: var(--text-dim);
+}
+
+#address-bar::selection {
+  background: var(--accent-dim);
+  color: var(--on-accent);
+}
+
+#address-bar:focus,
+#address-wrap.focused #address-bar {
+  border-color: var(--accent);
+  background: var(--bg-page);
+}
+
+#address-bar:focus-visible {
+  outline: none;
+}
+
+/* ── Zoom pill (28px hit target, 20px visual pill) ── */
+#zoom-indicator {
+  position: relative;
+  display: none;
+  align-items: center;
+  height: 28px;
+  padding: 0 8px;
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: var(--accent-text);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  isolation: isolate;  /* keeps the ::before pill behind the text */
+}
+
+#zoom-indicator::before {
+  content: '';
+  position: absolute;
+  inset: 4px 0;
+  z-index: -1;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  transition: background-color 0.1s;
+}
+
+#zoom-indicator:hover::before {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+#zoom-indicator.visible {
+  display: flex;
+}
+
+/* ── Bookmark star ── */
+#btn-bookmark.active {
+  color: var(--accent);
+}
+
+#btn-bookmark.active .icon {
+  fill: currentColor;
+}
+
+/* ── Suggestions dropdown (the only chrome element over #views) ── */
+#suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: none;
+  max-height: 400px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 4px 0;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-pop);
+}
+
+#suggestions.open {
+  display: block;
+}
+
+.sug-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
+  padding: 6px 12px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.sug-item:hover {
+  background: var(--bg-tab);
+}
+
+.sug-item.selected,
+.sug-item.focused {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.sug-icon {
+  width: 14px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+}
+
+.sug-icon .icon,
+.sug-icon img {
+  width: 14px;
+  height: 14px;
+}
+
+.sug-text {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sug-type {
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.sug-item[data-type="bookmark"] .sug-icon { color: var(--accent); }
+
+/* ═══════════════════════════════════════════════════════════
+   Shield (tracker & ad blocking)
+   #btn-shield (+ .off) › .ico-shield | .ico-shield-off, #shield-count
+   #shield-popover (+ .open) — drawn over the frozen page, like #suggestions
+   ═══════════════════════════════════════════════════════════ */
+
+#btn-shield .ico-shield-off,
+#btn-shield.off .ico-shield {
+  display: none;
+}
+
+#btn-shield.off .ico-shield-off {
+  display: block;
+}
+
+#btn-shield.off {
+  color: var(--text-faint);
+}
+
+#btn-shield.off:hover {
+  color: var(--text-dim);
+}
+
+#btn-shield[aria-expanded="true"] {
+  background: var(--bg-tab);
+  color: var(--text);
+}
+
+/* Count badge (accent pill on the shield's top-right corner) */
+#shield-count {
+  position: absolute;
+  bottom: 1px;
+  right: -2px;
+  min-width: 13px;
+  height: 13px;
+  padding: 0 3px;
+  border-radius: 7px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 8.5px;
+  font-weight: 700;
+  line-height: 13px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  box-shadow: 0 0 0 2px var(--bg-chrome);
+  pointer-events: none;
+}
+
+#btn-shield.off #shield-count {
+  display: none;
+}
+
+/* ── Popover ── */
+#shield-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 110;
+  display: none;
+  flex-direction: column;
+  width: 280px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-pop);
+  overflow: hidden;
+  user-select: none;
+}
+
+#shield-popover.open {
+  display: flex;
+  animation: shield-in 0.12s ease-out;
+}
+
+@keyframes shield-in {
+  from { opacity: 0; transform: translateY(-4px); }
+}
+
+.shield-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px 0;
+  min-width: 0;
+}
+
+.shield-head-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--accent);
+}
+
+/* Blocker brand tag in the popover header */
+.shield-brand {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--accent);
+}
+
+.shield-host {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.shield-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 10px 14px 12px;
+}
+
+.shield-blocked {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+.shield-blocked-label {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+#shield-popover:has(#shield-toggle:not(:checked)) .shield-blocked,
+#shield-popover:has(#shield-toggle:not(:checked)) .shield-head-icon {
+  color: var(--text-faint);
+}
+
+/* Toggle row with a switch */
+.shield-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  font-size: 12.5px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.shield-switch {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.shield-switch input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.shield-switch-track {
+  position: relative;
+  width: 32px;
+  height: 18px;
+  border: 1px solid var(--border-strong);
+  border-radius: 9px;
+  background: var(--bg-tab);
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.shield-switch-track::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  transition: transform 0.15s ease, background-color 0.15s;
+}
+
+.shield-switch input:checked + .shield-switch-track {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.shield-switch input:checked + .shield-switch-track::after {
+  background: var(--on-accent);
+  transform: translateX(14px);
+}
+
+.shield-switch input:focus-visible + .shield-switch-track {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Blocked domains on this page: .shield-row › .shield-domain + .shield-n */
+.shield-list {
+  max-height: 168px;
+  overflow-y: auto;
+  padding: 4px 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+.shield-list:empty {
+  display: none;
+}
+
+.shield-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 26px;
+  padding: 0 14px;
+  font-size: 12px;
+}
+
+.shield-domain {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--text);
+}
+
+.shield-n {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+
+.shield-foot {
+  padding: 8px 14px 10px;
+  border-top: 1px solid var(--border);
+}
+
+.shield-list:empty + .shield-foot {
+  border-top: 0;
+}
+
+.shield-foot a {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent-text);
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+}
+
+.shield-foot a:hover {
+  text-decoration: underline;
+}
+
+/* 2.3: picker / zap row — .shield-tools › button.pop-btn.shield-tool#shield-pick / #shield-zap */
+.shield-tools {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 8px 14px;
+  border-top: 1px solid var(--border);
+}
+
+.shield-list:empty + .shield-tools {
+  border-top: 0;
+}
+
+.shield-tool {
+  min-width: 0;
+  padding: 0 8px;
+}
+
+.shield-tool span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shield-tool:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}

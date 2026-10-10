@@ -1,0 +1,770 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Settings</title>
+    <link rel="icon" type="image/svg+xml" />
+    <link rel="stylesheet" href="./settings.css" />
+  </head>
+  <body>
+    <!-- ══ Sidebar navigation ══ -->
+    <nav class="sidebar" aria-label="Settings sections">
+      <div class="sidebar-title">Info / Settings</div>
+      <div class="sidebar-nav">
+        <button type="button" class="sidebar-btn active" data-action="section" data-arg="homepage"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span>Homepage</span></button>
+        <button type="button" class="sidebar-btn" data-action="section" data-arg="appearance"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/></svg><span>Appearance</span></button>
+        <button type="button" class="sidebar-btn" data-action="section" data-arg="search"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg><span>Search</span></button>
+        <button type="button" class="sidebar-btn" data-action="section" data-arg="privacy"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg><span>Privacy</span></button>
+        <button type="button" class="sidebar-btn" data-action="section" data-arg="passwords"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></svg><span>Passwords</span></button>
+        <button type="button" class="sidebar-btn" data-action="section" data-arg="performance"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg><span>Performance</span></button>
+        <button type="button" class="sidebar-btn" data-action="section" data-arg="extensions"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15.39 4.39a1 1 0 0 0 1.68-.474 2.5 2.5 0 1 1 3.014 3.015 1 1 0 0 0-.474 1.68l1.683 1.682a2.414 2.414 0 0 1 0 3.414L19.61 15.39a1 1 0 0 1-1.68-.474 2.5 2.5 0 1 0-3.014 3.015 1 1 0 0 1 .474 1.68l-1.683 1.682a2.414 2.414 0 0 1-3.414 0L8.61 19.61a1 1 0 0 0-1.68.474 2.5 2.5 0 1 1-3.014-3.015 1 1 0 0 0 .474-1.68l-1.683-1.682a2.414 2.414 0 0 1 0-3.414L4.39 8.61a1 1 0 0 1 1.68.474 2.5 2.5 0 1 0 3.014-3.015 1 1 0 0 1-.474-1.68l1.683-1.682a2.414 2.414 0 0 1 3.414 0z"/></svg><span>Extensions</span></button>
+        <button type="button" class="sidebar-btn" data-action="section" data-arg="downloads"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg><span>Downloads</span></button>
+        <button type="button" class="sidebar-btn" data-action="section" data-arg="import"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3v12"/><path d="m8 11 4 4 4-4"/><path d="M8 5H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-4"/></svg><span>Import</span></button>
+        <button type="button" class="sidebar-btn" data-action="section" data-arg="shortcuts"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10 8h.01"/><path d="M12 12h.01"/><path d="M14 8h.01"/><path d="M16 12h.01"/><path d="M18 8h.01"/><path d="M6 8h.01"/><path d="M7 16h10"/><path d="M8 12h.01"/><rect width="20" height="16" x="2" y="4" rx="2"/></svg><span>Shortcuts</span></button>
+        <button type="button" class="sidebar-btn" data-action="section" data-arg="history"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg><span>History</span></button>
+        <button type="button" class="sidebar-btn" data-action="section" data-arg="about"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span>About</span></button>
+      </div>
+    </nav>
+
+    <main class="content">
+      <!-- ══ Homepage ══ -->
+      <section id="homepage" class="tab-content active" aria-labelledby="homepage-h">
+        <div class="section-header">
+          <svg class="icon section-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          <h1 id="homepage-h">Homepage</h1>
+        </div>
+        <p class="subtitle">Customize your homepage experience</p>
+
+        <button type="button" class="btn-reset btn-block" data-action="reset" data-arg="homepage">Reset Homepage Settings</button>
+
+        <div class="settings-section">
+          <h2>Start Page</h2>
+          <div class="setting-item">
+            <label class="setting-label" for="homepage-url">Homepage URL</label>
+            <input type="text" id="homepage-url" class="input-wide" placeholder="Pure home (default)" spellcheck="false" autocomplete="off" />
+          </div>
+          <div class="info-text">Leave empty to use the Pure new tab page. Only http(s) addresses are allowed.</div>
+        </div>
+
+        <div class="settings-section">
+          <h2>Weather &amp; Time</h2>
+
+          <div class="setting-item">
+            <label class="setting-label" for="latitude">Location (Latitude)</label>
+            <input type="text" id="latitude" placeholder="e.g., 40.7128" autocomplete="off" />
+          </div>
+
+          <div class="setting-item">
+            <label class="setting-label" for="longitude">Location (Longitude)</label>
+            <input type="text" id="longitude" placeholder="e.g., -74.0060" autocomplete="off" />
+          </div>
+
+          <div class="setting-item">
+            <label class="setting-label" for="tempUnit">Temperature Unit</label>
+            <select id="tempUnit">
+              <option value="celsius">Celsius (°C)</option>
+              <option value="fahrenheit">Fahrenheit (°F)</option>
+            </select>
+          </div>
+
+          <div class="setting-item">
+            <label class="setting-label" for="timeFormat">Time Format</label>
+            <select id="timeFormat">
+              <option value="24h">24-hour</option>
+              <option value="12h">12-hour</option>
+            </select>
+          </div>
+
+          <div class="info-text">
+            Default location: New York (40.7128°N, 74.0060°W)<br />
+            Update the coordinates to see weather for your location.
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h2>Widgets</h2>
+          <div class="setting-item">
+            <label class="setting-label" for="widget-news-toggle">News
+              <span class="setting-hint">Daily brief from the sources below</span>
+            </label>
+            <span class="toggle-switch">
+              <input type="checkbox" id="widget-news-toggle" role="switch" />
+              <span class="toggle-slider" aria-hidden="true"></span>
+            </span>
+          </div>
+          <div class="setting-item">
+            <label class="setting-label" for="widget-weather-toggle">Weather &amp; Time
+              <span class="setting-hint">Current conditions, clock and a 3-day forecast</span>
+            </label>
+            <span class="toggle-switch">
+              <input type="checkbox" id="widget-weather-toggle" role="switch" />
+              <span class="toggle-slider" aria-hidden="true"></span>
+            </span>
+          </div>
+          <div class="setting-item">
+            <label class="setting-label" for="widget-reading-toggle">Continue Reading
+              <span class="setting-hint">Recent pages that aren&#39;t open in a tab</span>
+            </label>
+            <span class="toggle-switch">
+              <input type="checkbox" id="widget-reading-toggle" role="switch" />
+              <span class="toggle-slider" aria-hidden="true"></span>
+            </span>
+          </div>
+          <div class="setting-item">
+            <label class="setting-label" for="widget-notes-toggle">Notes
+              <span class="setting-hint">A scratch pad saved on this device</span>
+            </label>
+            <span class="toggle-switch">
+              <input type="checkbox" id="widget-notes-toggle" role="switch" />
+              <span class="toggle-slider" aria-hidden="true"></span>
+            </span>
+          </div>
+          <div class="setting-item">
+            <label class="setting-label" for="news-images-toggle">Show news images
+              <span class="setting-hint">Off = text-only headlines, fewer downloads</span>
+            </label>
+            <span class="toggle-switch">
+              <input type="checkbox" id="news-images-toggle" role="switch" />
+              <span class="toggle-slider" aria-hidden="true"></span>
+            </span>
+          </div>
+          <div class="setting-item">
+            <label class="setting-label" for="home-stats-toggle">Show stats line
+              <span class="setting-hint">Memory, sleeping tabs and blocked trackers under the board</span>
+            </label>
+            <span class="toggle-switch">
+              <input type="checkbox" id="home-stats-toggle" role="switch" />
+              <span class="toggle-slider" aria-hidden="true"></span>
+            </span>
+          </div>
+          <div class="info-text">Tip: press <strong>Customize</strong> on the home page to drag widgets into a different order.</div>
+        </div>
+
+        <div class="settings-section">
+          <h2>News Sources</h2>
+          <div id="news-sources" class="news-sources"><!-- label.news-source › input[type=checkbox][data-source] + span --></div>
+        </div>
+      </section>
+
+      <!-- ══ Appearance ══ -->
+      <section id="appearance" class="tab-content" aria-labelledby="appearance-h">
+        <div class="section-header">
+          <svg class="icon section-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/></svg>
+          <h1 id="appearance-h">Appearance</h1>
+        </div>
+        <p class="subtitle">Customize themes and colors</p>
+
+        <button type="button" class="btn-reset btn-block" data-action="reset" data-arg="appearance">Reset Appearance Settings</button>
+
+        <div class="settings-section">
+          <h2>Theme</h2>
+          <div class="setting-item">
+            <label class="setting-label" for="theme-select">
+              Theme
+              <span class="setting-hint">Applies to the browser, Pure pages and websites that support it</span>
+            </label>
+            <select id="theme-select">
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
+              <option value="system">Follow Windows</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <label class="setting-label" for="force-dark-toggle">Dark mode for websites
+              <span class="setting-hint">Darkens sites that have no dark theme of their own. Takes effect after restarting Pure</span>
+            </label>
+            <span class="toggle-switch">
+              <input type="checkbox" id="force-dark-toggle" role="switch" />
+              <span class="toggle-slider" aria-hidden="true"></span>
+            </span>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h2>Startup</h2>
+          <div class="setting-item">
+            <label class="setting-label" for="show-welcome-toggle">Show Welcome Animation</label>
+            <span class="toggle-switch">
+              <input type="checkbox" id="show-welcome-toggle" role="switch" />
+              <span class="toggle-slider" aria-hidden="true"></span>
+            </span>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h2>Interface</h2>
+          <div class="setting-item">
+            <label class="setting-label" for="show-bookmarks-bar-toggle">Show Bookmarks Bar</label>
+            <span class="toggle-switch">
+              <input type="checkbox" id="show-bookmarks-bar-toggle" role="switch" />
+              <span class="toggle-slider" aria-hidden="true"></span>
+            </span>
+          </div>
+          <div class="setting-item">
+            <label class="setting-label" for="show-statusbar-toggle">Show Status Bar</label>
+            <span class="toggle-switch">
+              <input type="checkbox" id="show-statusbar-toggle" role="switch" />
+              <span class="toggle-slider" aria-hidden="true"></span>
+            </span>
+          </div>
+          <div class="setting-item">
+            <label class="setting-label" for="vertical-tabs-toggle">Vertical Tabs
+              <span class="setting-hint">Show tabs in a column on the left</span>
+            </label>
+            <span class="toggle-switch">
+              <input type="checkbox" id="vertical-tabs-toggle" role="switch" />
+              <span class="toggle-slider" aria-hidden="true"></span>
+            </span>
+          </div>
+          <div class="setting-item">
+            <label class="setting-label" for="focus-mode-toggle">Focus Mode
+              <span class="setting-hint">Hide tabs and toolbars until you point at the top edge (Ctrl+Shift+F)</span>
+            </label>
+            <span class="toggle-switch">
+              <input type="checkbox" id="focus-mode-toggle" role="switch" />
+              <span class="toggle-slider" aria-hidden="true"></span>
+            </span>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h2>Accent Color</h2>
+          <div class="setting-item">
+            <label class="setting-label" for="accent-picker">Custom Accent Color</label>
+            <input type="color" id="accent-picker" value="#4f8ef7" />
+          </div>
+          <div class="section-actions">
+            <button type="button" class="btn-reset" data-action="reset-accent">Reset to Default</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ Search ══ -->
+      <section id="search" class="tab-content" aria-labelledby="search-h">
+        <div class="section-header">
+          <svg class="icon section-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+          <h1 id="search-h">Search</h1>
+        </div>
+        <p class="subtitle">Configure search preferences</p>
+
+        <button type="button" class="btn-reset btn-block" data-action="reset" data-arg="search">Reset Search Settings</button>
+
+        <div class="settings-section">
+          <h2>Search Engine</h2>
+          <div class="setting-item">
+            <label class="setting-label" for="search-engine">Default Search Engine</label>
+            <select id="search-engine">
+              <option value="https://duckduckgo.com/?q=">DuckDuckGo</option>
+              <option value="https://www.google.com/search?q=">Google</option>
+              <option value="https://www.bing.com/search?q=">Bing</option>
+              <option value="https://search.brave.com/search?q=">Brave</option>
+              <option value="https://www.startpage.com/do/search?q=">Startpage</option>
+              <option value="https://www.ecosia.org/search?q=">Ecosia</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <label class="setting-label" for="search-suggestions-toggle">
+              Search Suggestions
+              <span class="setting-hint">Suggest from your history and bookmarks while typing</span>
+            </label>
+            <span class="toggle-switch">
+              <input type="checkbox" id="search-suggestions-toggle" role="switch" />
+              <span class="toggle-slider" aria-hidden="true"></span>
+            </span>
+          </div>
+          <div class="info-text">This search engine will be used when you enter queries in the address bar.</div>
+        </div>
+      </section>
+
+      <!-- ══ Privacy ══ -->
+      <section id="privacy" class="tab-content" aria-labelledby="privacy-h">
+        <div class="section-header">
+          <svg class="icon section-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+          <h1 id="privacy-h">Privacy</h1>
+        </div>
+        <p class="subtitle">Blocking, sessions, browsing data and site permissions</p>
+
+        <button type="button" class="btn-reset btn-block" data-action="reset" data-arg="privacy">Reset Privacy Settings</button>
+
+        <div class="settings-section">
+          <h2>Startup &amp; Tabs</h2>
+          <div class="setting-item">
+            <label class="setting-label" for="restore-session-toggle">
+              Restore Previous Session
+              <span class="setting-hint">Reopen your tabs from last time on startup</span>
+            </label>
+            <span class="toggle-switch">
+              <input type="checkbox" id="restore-session-toggle" role="switch" />
+              <span class="toggle-slider" aria-hidden="true"></span>
+            </span>
+          </div>
+          <div class="setting-item">
+            <label class="setting-label" for="spellcheck-toggle">Spell Check</label>
+            <span class="toggle-switch">
+              <input type="checkbox" id="spellcheck-toggle" role="switch" />
+              <span class="toggle-slider" aria-hidden="true"></span>
+            </span>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h2>Purify</h2>
+          <p class="mf-help">Pure's built-in ad &amp; tracker blocker.</p>
+          <div class="setting-item">
+            <label class="setting-label" for="blocking-toggle">Block Ads &amp; Trackers
+              <span class="setting-hint">Turn it off for a single site from the shield in the address bar</span>
+            </label>
+            <span class="toggle-switch">
+              <input type="checkbox" id="blocking-toggle" role="switch" />
+              <span class="toggle-slider" aria-hidden="true"></span>
+            </span>
+          </div>
+          <div class="setting-item">
+            <label class="setting-label" for="blocking-level-select">Blocking level
+              <span class="setting-hint">Full blocks ads inside pages too, including YouTube's video ads. If a site misbehaves, turn blocking off for it from the shield, or use Balanced</span>
+            </label>
+            <select id="blocking-level-select">
+              <option value="strict">Full (recommended)</option>
+              <option value="balanced">Balanced</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <label class="setting-label" for="cookie-banners-toggle">Hide cookie banners
+              <span class="setting-hint">Removes most cookie consent pop-ups without accepting them</span>
+            </label>
+            <span class="toggle-switch">
+              <input type="checkbox" id="cookie-banners-toggle" role="switch" />
+              <span class="toggle-slider" aria-hidden="true"></span>
+            </span>
+          </div>
+        </div>
+
+        <div class="settings-section fl-card" id="filter-lists">
+          <div class="section-title-row">
+            <h2>Filter Lists</h2>
+            <button type="button" class="btn-reset btn-small btn-icon-text" data-action="update-lists"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg><span>Update now</span></button>
+          </div>
+          <div id="fl-status" class="fl-status" role="status" aria-live="polite"></div>
+          <div id="filter-lists-groups" class="fl-groups"><!-- .fl-group › .fl-group-title + .fl-row[data-id](.recommended) › input.fl-toggle[type=checkbox] .fl-name .fl-meta(.fl-error) + button[data-action="remove-list"] (custom) -->
+            <div class="empty-state">Loading lists…</div>
+          </div>
+          <div class="fl-add">
+            <label class="sr-only" for="fl-add-url">Add a filter list by URL</label>
+            <input type="text" id="fl-add-url" class="fl-add-input" placeholder="https://example.com/filters.txt" spellcheck="false" autocomplete="off" inputmode="url" />
+            <button type="button" class="btn-primary btn-small btn-icon-text" data-action="add-list"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="M12 5v14"/></svg><span>Add list</span></button>
+          </div>
+        </div>
+
+        <div class="settings-section mf-card" id="my-filters">
+          <h2>My Filters</h2>
+          <p class="info-text mf-help">One rule per line, uBlock Origin syntax. Example: <code>example.com##.ad-banner</code></p>
+          <label class="sr-only" for="my-filters-input">My filters</label>
+          <textarea id="my-filters-input" class="mf-input" rows="10" spellcheck="false" autocomplete="off" autocapitalize="off" wrap="off" placeholder="! Comments start with !&#10;example.com##.ad-banner&#10;||ads.example.net^"></textarea>
+          <div class="mf-actions">
+            <button type="button" class="btn-primary btn-small" data-action="save-my-filters">Save filters</button>
+            <div id="my-filters-status" class="mf-status" role="status" aria-live="polite"></div>
+          </div>
+        </div>
+
+        <div class="settings-section doh-card">
+          <h2>Secure DNS</h2>
+          <div class="setting-item">
+            <label class="setting-label" for="doh-mode-select">Mode
+              <span class="setting-hint">Encrypts the lookups that turn site names into addresses</span>
+            </label>
+            <select id="doh-mode-select">
+              <option value="off">Off</option>
+              <option value="automatic">Automatic</option>
+              <option value="secure">Secure only</option>
+            </select>
+          </div>
+          <div class="setting-item doh-provider-row">
+            <label class="setting-label" for="doh-provider-select">Provider</label>
+            <select id="doh-provider-select">
+              <option value="cloudflare">Cloudflare (1.1.1.1)</option>
+              <option value="google">Google Public DNS</option>
+              <option value="quad9">Quad9</option>
+              <option value="nextdns">NextDNS</option>
+              <option value="custom">Custom…</option>
+            </select>
+          </div>
+          <div class="setting-item doh-custom-row">
+            <label class="setting-label" for="doh-custom-input">Custom server
+              <span class="setting-hint">A DNS-over-HTTPS template, e.g. https://dns.example/dns-query{?dns}</span>
+            </label>
+            <input type="text" id="doh-custom-input" class="input-wide" placeholder="https://…/dns-query" spellcheck="false" autocomplete="off" />
+          </div>
+          <div class="info-text">Automatic falls back to your normal DNS when the provider can&#39;t be reached. Secure only never does.</div>
+        </div>
+
+        <div class="settings-section stats-card">
+          <div class="section-title-row">
+            <h2>Purify Stats</h2>
+            <button type="button" class="btn-ghost btn-small" data-action="reset-stats">Reset stats</button>
+          </div>
+          <div class="stat-grid">
+            <div class="stat-tile"><span class="stat-value" id="stat-today">0</span><span class="stat-label">Today</span></div>
+            <div class="stat-tile"><span class="stat-value" id="stat-week">0</span><span class="stat-label">This week</span></div>
+            <div class="stat-tile"><span class="stat-value" id="stat-total">0</span><span class="stat-label">All time</span></div>
+            <div class="stat-tile"><span class="stat-value" id="stat-data-saved">0 MB</span><span class="stat-label">Data saved <span class="stat-est">est.</span></span></div>
+          </div>
+          <div class="stat-chart-wrap">
+            <div id="stat-chart" class="stat-chart" role="img" aria-label="Blocked requests per day, last 30 days"><!-- div.stat-bar[style="--h:0..1"][title] x30 --></div>
+            <div class="stat-chart-axis" aria-hidden="true"><span>30 days ago</span><span>Today</span></div>
+          </div>
+          <h3 class="sub-heading">Most blocked</h3>
+          <div id="top-blocked-list" class="list top-list"><!-- .top-row › .top-domain + .top-n -->
+            <div class="empty-state">Nothing blocked yet</div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h2>Sites Without Blocking</h2>
+          <div id="shield-exceptions-list" class="list"><!-- .exception-row › .exception-host + button[data-action="remove-exception"][data-host] -->
+            <div class="empty-state">Blocking is on for every site</div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h2>Clear Browsing Data</h2>
+          <div class="checkbox-grid">
+            <label class="checkbox"><input type="checkbox" id="clear-history-cb" checked /><span class="checkbox-box" aria-hidden="true"></span>Browsing history</label>
+            <label class="checkbox"><input type="checkbox" id="clear-cookies-cb" /><span class="checkbox-box" aria-hidden="true"></span>Cookies &amp; site data</label>
+            <label class="checkbox"><input type="checkbox" id="clear-cache-cb" checked /><span class="checkbox-box" aria-hidden="true"></span>Cached images &amp; files</label>
+            <label class="checkbox"><input type="checkbox" id="clear-downloads-cb" /><span class="checkbox-box" aria-hidden="true"></span>Download history</label>
+          </div>
+          <div class="section-actions">
+            <button type="button" class="btn-danger" data-action="clear-data">Clear Data</button>
+            <span id="clear-data-status" class="status-text" role="status"></span>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h2>Site Permissions</h2>
+          <div id="site-permissions-list" class="list">
+            <div class="empty-state">No site permissions saved</div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h2>Default Browser</h2>
+          <div class="setting-item">
+            <span class="setting-label" id="default-browser-status">Checking…</span>
+            <button type="button" class="btn-primary" data-action="make-default">Make Default</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ Passwords ══ -->
+      <section id="passwords" class="tab-content" aria-labelledby="passwords-h">
+        <div class="section-header">
+          <svg class="icon section-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></svg>
+          <h1 id="passwords-h">Passwords</h1>
+        </div>
+        <p class="subtitle">Saved sign-ins, encrypted on this device</p>
+
+        <div class="settings-section">
+          <h2>Saving</h2>
+          <div class="setting-item">
+            <label class="setting-label" for="save-passwords-toggle">Offer to Save Passwords
+              <span class="setting-hint">Pure asks after you sign in. Never in incognito windows</span>
+            </label>
+            <span class="toggle-switch">
+              <input type="checkbox" id="save-passwords-toggle" role="switch" />
+              <span class="toggle-slider" aria-hidden="true"></span>
+            </span>
+          </div>
+          <div class="info-text">Passwords are encrypted with your Windows account and never leave this device. Pure only fills a password on the exact site it was saved for.</div>
+        </div>
+
+        <div class="settings-section">
+          <div class="section-title-row">
+            <h2>Saved Passwords</h2>
+          </div>
+          <input type="search" id="pw-search" class="search-field pw-search" placeholder="Search passwords" aria-label="Search passwords" autocomplete="off" spellcheck="false" />
+          <div id="pw-list" class="list pw-list"><!-- .pw-row[data-id] › img.pw-favicon .pw-origin .pw-username .pw-password + icon buttons; .pw-row.editing -->
+            <div class="empty-state">No saved passwords yet</div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h2>Never Saved</h2>
+          <div id="pw-never-list" class="list"><!-- .never-row › .never-origin + button -->
+            <div class="empty-state">Pure will offer to save passwords on every site</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ Performance ══ -->
+      <section id="performance" class="tab-content" aria-labelledby="performance-h">
+        <div class="section-header">
+          <svg class="icon section-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>
+          <h1 id="performance-h">Performance</h1>
+        </div>
+        <p class="subtitle">Memory, tab sleeping and Lite mode</p>
+
+        <button type="button" class="btn-reset btn-block" data-action="reset" data-arg="performance">Reset Performance Settings</button>
+
+        <div class="settings-section">
+          <h2>Saving Resources</h2>
+          <div class="setting-item">
+            <label class="setting-label" for="lite-mode-toggle">Lite Mode
+              <span class="setting-hint">Blocks annoyances, reduces animations and sleeps tabs after 3 minutes</span>
+            </label>
+            <span class="toggle-switch">
+              <input type="checkbox" id="lite-mode-toggle" role="switch" />
+              <span class="toggle-slider" aria-hidden="true"></span>
+            </span>
+          </div>
+          <div class="setting-item">
+            <label class="setting-label" for="smart-sleep-toggle">Smart Sleep
+              <span class="setting-hint">Sleeps tabs sooner on battery or when memory is low</span>
+            </label>
+            <span class="toggle-switch">
+              <input type="checkbox" id="smart-sleep-toggle" role="switch" />
+              <span class="toggle-slider" aria-hidden="true"></span>
+            </span>
+          </div>
+          <div class="setting-item">
+            <label class="setting-label" for="tab-discard-select">
+              Sleep Inactive Tabs
+              <span class="setting-hint">Frees memory; the tab reloads when you return to it</span>
+            </label>
+            <select id="tab-discard-select">
+              <option value="0">Never</option>
+              <option value="5">After 5 minutes</option>
+              <option value="10">After 10 minutes</option>
+              <option value="30">After 30 minutes</option>
+              <option value="60">After 1 hour</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="section-title-row">
+            <h2>Open Tabs</h2>
+            <button type="button" class="btn-reset btn-small btn-icon-text" data-action="sleep-all"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg><span>Sleep inactive tabs</span></button>
+          </div>
+          <div id="perf-total" class="perf-total">Measuring…</div>
+          <div class="perf-head" aria-hidden="true"><span></span><span>Tab</span><span>Memory</span><span>CPU</span><span></span></div>
+          <div id="perf-list" class="list perf-list"><!-- .perf-row[data-tab-id] › img.perf-favicon .perf-title .perf-mem .perf-cpu + button[data-action="sleep-tab"] --></div>
+        </div>
+      </section>
+
+      <!-- ══ Extensions ══ -->
+      <section id="extensions" class="tab-content" aria-labelledby="extensions-h">
+        <div class="section-header">
+          <svg class="icon section-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15.39 4.39a1 1 0 0 0 1.68-.474 2.5 2.5 0 1 1 3.014 3.015 1 1 0 0 0-.474 1.68l1.683 1.682a2.414 2.414 0 0 1 0 3.414L19.61 15.39a1 1 0 0 1-1.68-.474 2.5 2.5 0 1 0-3.014 3.015 1 1 0 0 1 .474 1.68l-1.683 1.682a2.414 2.414 0 0 1-3.414 0L8.61 19.61a1 1 0 0 0-1.68.474 2.5 2.5 0 1 1-3.014-3.015 1 1 0 0 0 .474-1.68l-1.683-1.682a2.414 2.414 0 0 1 0-3.414L4.39 8.61a1 1 0 0 1 1.68.474 2.5 2.5 0 1 0 3.014-3.015 1 1 0 0 1-.474-1.68l1.683-1.682a2.414 2.414 0 0 1 3.414 0z"/></svg>
+          <h1 id="extensions-h">Extensions</h1>
+        </div>
+        <p class="subtitle">Add features from the Chrome Web Store</p>
+
+        <div class="settings-section">
+          <h2>Get Extensions</h2>
+          <div class="ext-actions-row">
+            <button type="button" class="btn-primary btn-icon-text" data-action="open-web-store"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 21v-5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5"/><path d="M17.774 10.31a1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.451 0 1.12 1.12 0 0 0-1.548 0 2.5 2.5 0 0 1-3.452 0 1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.77-3.248l2.889-4.184A2 2 0 0 1 7 2h10a2 2 0 0 1 1.653.873l2.895 4.192a2.5 2.5 0 0 1-3.774 3.244"/><path d="M4 10.95V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8.05"/></svg><span>Open Chrome Web Store</span></button>
+            <button type="button" class="btn-reset btn-icon-text" data-action="load-unpacked"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg><span>Load unpacked…</span></button>
+          </div>
+          <div class="note"><svg class="icon note-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span>Most simple extensions work. Some that rely on advanced Chrome features may not. Extensions never run in incognito windows.</span></div>
+          <div id="ext-status" class="import-status ext-status" role="status" aria-live="polite"></div>
+        </div>
+
+        <div class="settings-section">
+          <h2>Installed</h2>
+          <div id="ext-list" class="list ext-list"><!-- .ext-row[data-id] › img.ext-icon .ext-name .ext-meta .ext-desc + input.ext-toggle + button[data-action="remove-extension"] -->
+            <div class="empty-state">No extensions installed</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ Downloads ══ -->
+      <section id="downloads" class="tab-content" aria-labelledby="downloads-h">
+        <div class="section-header">
+          <svg class="icon section-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>
+          <h1 id="downloads-h">Downloads</h1>
+        </div>
+        <p class="subtitle">Files you've downloaded</p>
+
+        <div class="settings-section">
+          <h2>Saving</h2>
+          <div class="setting-item">
+            <label class="setting-label" for="ask-where-to-save-toggle">
+              Ask Where to Save Each File
+              <span class="setting-hint">Otherwise files go straight to your Downloads folder</span>
+            </label>
+            <span class="toggle-switch">
+              <input type="checkbox" id="ask-where-to-save-toggle" role="switch" />
+              <span class="toggle-slider" aria-hidden="true"></span>
+            </span>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="section-title-row">
+            <h2>Recent Downloads</h2>
+            <button type="button" class="btn-reset btn-small" data-action="clear-downloads">Clear List</button>
+          </div>
+          <div id="downloads-list" class="list">
+            <div class="empty-state">No downloads yet</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ Import ══ -->
+      <section id="import" class="tab-content" aria-labelledby="import-h">
+        <div class="section-header">
+          <svg class="icon section-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3v12"/><path d="m8 11 4 4 4-4"/><path d="M8 5H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-4"/></svg>
+          <h1 id="import-h">Import</h1>
+        </div>
+        <p class="subtitle">Bring your bookmarks and history over from another browser</p>
+
+        <div class="settings-section">
+          <h2>What to Import</h2>
+          <div class="checkbox-grid">
+            <label class="checkbox"><input type="checkbox" id="import-bookmarks-cb" checked /><span class="checkbox-box" aria-hidden="true"></span>Bookmarks</label>
+            <label class="checkbox"><input type="checkbox" id="import-history-cb" checked /><span class="checkbox-box" aria-hidden="true"></span>History (last 90 days)</label>
+            <label class="checkbox"><input type="checkbox" id="import-settings-cb" /><span class="checkbox-box" aria-hidden="true"></span>Settings &amp; quick links (Pure 1.1.1 only)</label>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h2>Import From</h2>
+          <div id="import-sources" class="list"><!-- .import-row[data-source] › .import-name .import-detail + button[data-action="run-import"] -->
+            <div class="empty-state">Looking for browsers…</div>
+          </div>
+          <div id="import-status" class="import-status" role="status" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <!-- ══ Shortcuts ══ -->
+      <section id="shortcuts" class="tab-content" aria-labelledby="shortcuts-h">
+        <div class="section-header">
+          <svg class="icon section-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10 8h.01"/><path d="M12 12h.01"/><path d="M14 8h.01"/><path d="M16 12h.01"/><path d="M18 8h.01"/><path d="M6 8h.01"/><path d="M7 16h10"/><path d="M8 12h.01"/><rect width="20" height="16" x="2" y="4" rx="2"/></svg>
+          <h1 id="shortcuts-h">Keyboard Shortcuts</h1>
+        </div>
+        <p class="subtitle">Quick reference for keyboard shortcuts</p>
+
+        <table class="shortcuts-table">
+          <thead>
+            <tr><th scope="col">Action</th><th scope="col">Shortcut</th></tr>
+          </thead>
+          <tbody>
+            <tr class="group-row"><th colspan="2" scope="rowgroup">Tabs &amp; windows</th></tr>
+            <tr><td>New Tab</td><td><kbd class="shortcut-key">Ctrl+T</kbd></td></tr>
+            <tr><td>Close Tab</td><td><kbd class="shortcut-key">Ctrl+W</kbd> <kbd class="shortcut-key">Ctrl+F4</kbd></td></tr>
+            <tr><td>Reopen Closed Tab</td><td><kbd class="shortcut-key">Ctrl+Shift+T</kbd></td></tr>
+            <tr><td>New Window</td><td><kbd class="shortcut-key">Ctrl+N</kbd></td></tr>
+            <tr><td>New Incognito Window</td><td><kbd class="shortcut-key">Ctrl+Shift+N</kbd></td></tr>
+            <tr><td>Next / Previous Tab</td><td><kbd class="shortcut-key">Ctrl+Tab</kbd> <kbd class="shortcut-key">Ctrl+Shift+Tab</kbd></td></tr>
+            <tr><td>Switch to Tab 1–8</td><td><kbd class="shortcut-key">Ctrl+1–8</kbd> <kbd class="shortcut-key">Alt+1–8</kbd></td></tr>
+            <tr><td>Switch to Last Tab</td><td><kbd class="shortcut-key">Ctrl+9</kbd></td></tr>
+
+            <tr class="group-row"><th colspan="2" scope="rowgroup">Navigation</th></tr>
+            <tr><td>Focus Address Bar</td><td><kbd class="shortcut-key">Ctrl+L</kbd> <kbd class="shortcut-key">Alt+D</kbd> <kbd class="shortcut-key">F6</kbd></td></tr>
+            <tr><td>Back</td><td><kbd class="shortcut-key">Alt+←</kbd></td></tr>
+            <tr><td>Forward</td><td><kbd class="shortcut-key">Alt+→</kbd></td></tr>
+            <tr><td>Reload Page</td><td><kbd class="shortcut-key">Ctrl+R</kbd> <kbd class="shortcut-key">F5</kbd></td></tr>
+            <tr><td>Hard Reload</td><td><kbd class="shortcut-key">Ctrl+Shift+R</kbd> <kbd class="shortcut-key">Ctrl+F5</kbd></td></tr>
+            <tr><td>Stop Loading / Close Find</td><td><kbd class="shortcut-key">Esc</kbd></td></tr>
+
+            <tr class="group-row"><th colspan="2" scope="rowgroup">Page</th></tr>
+            <tr><td>Find in Page</td><td><kbd class="shortcut-key">Ctrl+F</kbd></td></tr>
+            <tr><td>Bookmark Current Page</td><td><kbd class="shortcut-key">Ctrl+D</kbd></td></tr>
+            <tr><td>Toggle Bookmarks Bar</td><td><kbd class="shortcut-key">Ctrl+Shift+B</kbd></td></tr>
+            <tr><td>Zoom In</td><td><kbd class="shortcut-key">Ctrl+=</kbd></td></tr>
+            <tr><td>Zoom Out</td><td><kbd class="shortcut-key">Ctrl+-</kbd></td></tr>
+            <tr><td>Reset Zoom</td><td><kbd class="shortcut-key">Ctrl+0</kbd></td></tr>
+            <tr><td>Picture in Picture</td><td><kbd class="shortcut-key">Alt+P</kbd></td></tr>
+            <tr><td>Print</td><td><kbd class="shortcut-key">Ctrl+P</kbd></td></tr>
+            <tr><td>Full Screen</td><td><kbd class="shortcut-key">F11</kbd></td></tr>
+
+            <tr class="group-row"><th colspan="2" scope="rowgroup">Productivity</th></tr>
+            <tr><td>Command Palette</td><td><kbd class="shortcut-key">Ctrl+K</kbd></td></tr>
+            <tr><td>Search Tabs</td><td><kbd class="shortcut-key">Ctrl+Shift+A</kbd></td></tr>
+            <tr><td>Focus Mode</td><td><kbd class="shortcut-key">Ctrl+Shift+F</kbd></td></tr>
+            <tr><td>Split View</td><td><kbd class="shortcut-key">Ctrl+Shift+S</kbd></td></tr>
+            <tr><td>Mute Other Tabs</td><td><kbd class="shortcut-key">Ctrl+Shift+M</kbd></td></tr>
+            <tr><td>Reader Mode</td><td><kbd class="shortcut-key">F9</kbd></td></tr>
+
+            <tr class="group-row"><th colspan="2" scope="rowgroup">Tools</th></tr>
+            <tr><td>Open History</td><td><kbd class="shortcut-key">Ctrl+H</kbd></td></tr>
+            <tr><td>Developer Tools</td><td><kbd class="shortcut-key">F12</kbd> <kbd class="shortcut-key">Ctrl+Shift+I</kbd></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ══ History ══ -->
+      <section id="history" class="tab-content" aria-labelledby="history-h">
+        <div class="section-header">
+          <svg class="icon section-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+          <h1 id="history-h">History</h1>
+        </div>
+        <p class="subtitle">Your browsing history</p>
+
+        <div class="history-toolbar">
+          <input type="search" id="history-search" class="search-field" placeholder="Search history" aria-label="Search history" autocomplete="off" spellcheck="false" />
+          <button type="button" class="btn-reset" data-action="clear-history">Clear All History</button>
+        </div>
+
+        <div class="settings-section">
+          <div id="history-list" class="list">
+            <div class="empty-state">No history yet</div>
+          </div>
+          <button type="button" id="history-more" class="btn-reset btn-block btn-more" data-action="history-more" hidden>Show More</button>
+        </div>
+      </section>
+
+      <!-- ══ About ══ -->
+      <section id="about" class="tab-content" aria-labelledby="about-h">
+        <div class="section-header">
+          <svg class="icon section-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+          <h1 id="about-h">About</h1>
+        </div>
+        <p class="subtitle">Information about Pure Browser</p>
+
+        <div class="settings-section about-card">
+          <span class="setting-label">Pure Browser</span>
+          <div class="about-version" id="version-display">Version 2.0.0</div>
+          <div class="about-engine" id="engine-display"></div>
+          <p class="about-tagline">A minimal Chromium browser — no bloat, just browsing.</p>
+        </div>
+
+        <div class="settings-section update-card">
+          <h2>Updates</h2>
+          <div class="update-row">
+            <span id="update-status" class="update-status" role="status" aria-live="polite">Checking…</span>
+            <div class="update-buttons">
+              <button type="button" class="btn-reset btn-small btn-icon-text" data-action="check-updates"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg><span>Check for updates</span></button>
+              <button type="button" class="btn-primary btn-small btn-icon-text" data-action="install-update" hidden><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg><span>Restart &amp; update</span></button>
+            </div>
+          </div>
+          <div class="update-track"><div id="update-progress" class="update-progress" role="progressbar" aria-label="Update download progress"></div></div>
+          <div class="setting-item">
+            <label class="setting-label" for="auto-update-toggle">Update Automatically
+              <span class="setting-hint">Downloads updates in the background and installs them when you quit</span>
+            </label>
+            <span class="toggle-switch">
+              <input type="checkbox" id="auto-update-toggle" role="switch" />
+              <span class="toggle-slider" aria-hidden="true"></span>
+            </span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Auto-save confirmation -->
+    <div id="save-toast" role="status" aria-live="polite"><svg class="icon toast-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg><span id="save-toast-text">Saved</span></div>
+
+    <script src="./settings.js"></script>
+    <script src="./blocking.js"></script>
+    <script src="./performance.js"></script>
+    <script src="./home-widgets.js"></script>
+    <script src="./import.js"></script>
+    <script src="./passwords.js"></script>
+    <script src="./extensions.js"></script>
+    <script src="./updater.js"></script>
+    <script src="./filterlists.js"></script>
+    <script src="./myfilters.js"></script>
+  </body>
+</html>

@@ -1,0 +1,188 @@
+/* ═══════════════════════════════════════════════════════════
+   Tab strip
+   Generated markup: div.tab[data-tab-id] › .tab-favicon-wrapper
+   (img.tab-favicon | .tab-dot), span.tab-title, button.tab-audio,
+   span.tab-sleeping, button.tab-close
+   ═══════════════════════════════════════════════════════════ */
+
+#tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  min-width: 80px;
+  max-width: 200px;
+  flex: 1 1 200px;
+  padding: 0 6px 0 12px;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  cursor: pointer;
+  overflow: hidden;
+  -webkit-app-region: no-drag;
+  transition: background-color 0.15s;
+}
+
+.tab:not(.active):hover {
+  background: var(--bg-hover);
+}
+
+.tab.active {
+  background: var(--bg-active);
+}
+
+/* No accent bar under the active tab (removed in 2.2.1) — the lighter tab background marks it. */
+
+.tab.dragging {
+  opacity: 0.5;
+}
+
+/* ── Favicon / homepage dot / loading spinner ── */
+.tab-favicon-wrapper {
+  position: relative;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tab-favicon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* Fallback glyph when a page has no (loadable) favicon */
+.tab-fallback {
+  width: 14px;
+  height: 14px;
+  display: block;
+  color: var(--text-dim);
+}
+
+.tab.active .tab-fallback-globe,
+.tab:hover .tab-fallback-globe {
+  color: var(--text);
+}
+
+.tab-fallback-triangle-alert {
+  color: var(--danger);
+}
+
+.tab-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* Spinner: the wrapper itself is the single rotating element */
+.tab-favicon-wrapper.loading {
+  border: 2px solid var(--spinner-track);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: tab-spin 0.8s linear infinite;
+}
+
+.tab-favicon-wrapper.loading > * {
+  display: none;
+}
+
+@keyframes tab-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Title ── */
+.tab-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.15s;
+}
+
+.tab.active .tab-title,
+.tab:hover .tab-title {
+  color: var(--text);
+}
+
+.tab.active .tab-title {
+  font-weight: 500;
+}
+
+/* ── Small tab buttons (audio, close) ── */
+.tab-audio,
+.tab-close {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.1s, color 0.1s;
+}
+
+.tab-audio .icon,
+.tab-close .icon {
+  width: 12px;
+  height: 12px;
+}
+
+.tab-audio:hover {
+  background: var(--bg-tab);
+  color: var(--text);
+}
+
+.tab-audio.muted {
+  color: var(--text-faint);
+}
+
+.tab-audio.muted:hover {
+  color: var(--text);
+}
+
+.tab-close:hover {
+  background: var(--danger);
+  color: var(--on-accent);
+}
+
+/* ── Sleeping (discarded) / crashed ── */
+.tab-sleeping.icon {
+  width: 11px;
+  height: 11px;
+  color: var(--accent);
+}
+
+.tab.discarded .tab-favicon-wrapper,
+.tab.discarded .tab-title {
+  opacity: 0.55;
+}
+
+.tab.crashed .tab-title {
+  color: var(--danger);
+}
+
+/* ── Light theme: the active tab is a white card on the grey strip ── */
+@media (prefers-color-scheme: light) {
+  .tab.active {
+    box-shadow: 0 0 0 1px var(--border), 0 1px 2px rgba(0, 0, 0, 0.06);
+  }
+}

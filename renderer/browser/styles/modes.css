@@ -1,0 +1,223 @@
+/* ═══════════════════════════════════════════════════════════
+   Layout modes: focus mode (html.focus-mode / .focus-reveal) and
+   vertical tabs (html.vertical-tabs). CSS-only re-flows of the same DOM;
+   #views always stays a plain box that layout.js measures.
+   ═══════════════════════════════════════════════════════════ */
+
+/* ═══ Focus mode ═══ */
+#focus-reveal {
+  display: none;
+  flex-shrink: 0;
+  height: 4px;
+  background: var(--bg-chrome);
+  -webkit-app-region: no-drag;  /* it must receive the hover */
+}
+
+html.focus-mode #focus-reveal {
+  display: block;
+}
+
+html.focus-mode #focus-reveal:hover {
+  background: color-mix(in srgb, var(--accent) 45%, var(--bg-chrome));
+}
+
+html.focus-mode:not(.focus-reveal) #titlebar,
+html.focus-mode:not(.focus-reveal) #toolbar,
+html.focus-mode:not(.focus-reveal) #bookmark-sidebar,
+html.focus-mode:not(.focus-reveal) #statusbar,
+html.focus-mode:not(.focus-reveal) #pw-bar {
+  display: none !important;
+}
+
+/* Revealed: the strip blends into the title bar */
+html.focus-mode.focus-reveal #focus-reveal {
+  background: var(--bg-chrome);
+}
+
+/* ═══ Vertical tabs ═══
+   #shell becomes a grid; #titlebar is display:contents so its children are
+   placed directly:
+     row 1  #focus-reveal                    (full width, only in focus mode)
+     row 2  #titlebar-right = slim drag bar  (full width, window controls right)
+     row 3  #toolbar                         (full width)
+     row 4  #pw-bar                          (full width)
+     row 5  #bookmark-sidebar                (full width)
+     rows 6–8, col 1: tab column (#btn-new-tab on top of #tabs-scroll)
+     row 6  #findbar   (col 2)
+     row 7  #views     (col 2, 1fr)
+     row 8  #statusbar (col 2)                                           */
+html.vertical-tabs {
+  --vtabs-w: 220px;
+}
+
+html.vertical-tabs #shell {
+  display: grid;
+  grid-template-columns: var(--vtabs-w) minmax(0, 1fr);
+  grid-template-rows: auto auto auto auto auto auto minmax(0, 1fr) auto;
+}
+
+html.vertical-tabs #focus-reveal     { grid-column: 1 / -1; grid-row: 1; }
+html.vertical-tabs #titlebar         { display: contents; }
+html.vertical-tabs #titlebar-right   { grid-column: 1 / -1; grid-row: 2; }
+html.vertical-tabs #toolbar          { grid-column: 1 / -1; grid-row: 3; }
+html.vertical-tabs #pw-bar           { grid-column: 1 / -1; grid-row: 4; }
+html.vertical-tabs #bookmark-sidebar { grid-column: 1 / -1; grid-row: 5; }
+html.vertical-tabs #findbar          { grid-column: 2; grid-row: 6; }
+html.vertical-tabs #views            { grid-column: 2; grid-row: 7; }
+html.vertical-tabs #statusbar        { grid-column: 2; grid-row: 8; }
+
+/* Slim drag bar holding the window controls */
+html.vertical-tabs #titlebar-right {
+  justify-content: flex-end;
+  height: 30px;
+  margin-left: 0;
+  padding-left: 0;
+  background: var(--bg-chrome);
+  border-bottom: 1px solid var(--border);
+  -webkit-app-region: drag;
+}
+
+html.vertical-tabs #win-controls button {
+  height: 26px;
+}
+
+html.incognito.vertical-tabs #titlebar-right {
+  background: linear-gradient(90deg, var(--incognito-tint) 0%, var(--bg-chrome) 100%);
+  border-bottom-color: var(--border-incognito);
+}
+
+/* Tab column */
+html.vertical-tabs #btn-new-tab,
+html.vertical-tabs #tabs-scroll {
+  grid-column: 1;
+  grid-row: 6 / -1;
+}
+
+html.vertical-tabs #tabs-scroll {
+  flex-direction: column;
+  align-items: stretch;
+  min-height: 0;
+  padding: 44px 6px 8px;  /* room for the + row on top */
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: var(--bg-chrome);
+  border-right: 1px solid var(--border);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+html.vertical-tabs #tabs-scroll::-webkit-scrollbar {
+  display: block;
+  width: 6px;
+}
+
+html.vertical-tabs #tabs-scroll::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 3px;
+}
+
+html.incognito.vertical-tabs #tabs-scroll {
+  border-right-color: var(--border-incognito);
+}
+
+/* "+" row at the top of the column */
+html.vertical-tabs #btn-new-tab {
+  position: relative;
+  z-index: 1;
+  align-self: start;
+  justify-content: flex-start;
+  gap: 8px;
+  width: calc(var(--vtabs-w) - 13px);
+  height: 30px;
+  margin: 8px 6px 0;
+  padding: 0 10px;
+  border-radius: var(--radius-lg);
+  font-size: 12px;
+}
+
+html.vertical-tabs #btn-new-tab::after {
+  content: 'New tab';
+}
+
+html.vertical-tabs #tabs {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  min-width: 0;
+}
+
+html.vertical-tabs .tab {
+  flex: 0 0 auto;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  height: 32px;
+  padding: 0 6px 0 10px;
+}
+
+/* Active marker becomes a left bar */
+/* Close button only on hover / active, like a list */
+html.vertical-tabs .tab:not(.active):not(:hover) .tab-close {
+  opacity: 0;
+}
+
+/* Drop indicator turns horizontal: JS sets style.top in vertical mode */
+html.vertical-tabs #tab-drop-indicator {
+  top: 0;
+  bottom: auto;
+  left: 6px !important;
+  right: 6px;
+  width: auto;
+  height: 2px;
+}
+
+/* Group chips become full-width section headers */
+html.vertical-tabs .tab-group {
+  justify-content: flex-start;
+  width: 100%;
+  max-width: none;
+  height: 26px;
+  margin: 6px 0 2px;
+  padding: 0 10px;
+  border-radius: var(--radius);
+  text-align: left;
+}
+
+html.vertical-tabs #tabs > .tab-group:first-child {
+  margin-top: 0;
+}
+
+html.vertical-tabs .tab-group:empty {
+  width: 100%;
+  height: 6px;
+  margin: 8px 0 4px;
+  border-radius: 3px;
+}
+
+html.vertical-tabs .tab-group.collapsed[data-count]::after {
+  margin-left: auto;
+}
+
+/* Member tabs: group line on the left instead of underneath */
+html.vertical-tabs .tab[data-group-id] {
+  padding-left: 14px;
+}
+
+html.vertical-tabs .tab[data-group-id]::before {
+  top: 4px;
+  bottom: 4px;
+  left: 5px;
+  right: auto;
+  width: 2px;
+  height: auto;
+}
+
+/* Focus mode + vertical tabs: the column collapses with the rest of the chrome */
+html.vertical-tabs.focus-mode:not(.focus-reveal) #shell {
+  grid-template-columns: 0 minmax(0, 1fr);
+}
+
+html.vertical-tabs.focus-mode:not(.focus-reveal) #findbar,
+html.vertical-tabs.focus-mode:not(.focus-reveal) #views {
+  grid-column: 1 / -1;
+}

@@ -1,0 +1,181 @@
+/* Pure — element picker overlay. Injected into a CLOSED shadow root by preload/picker.js,
+   so no page CSS or Pure variables reach it: colors are explicit. Accent = Pure blue.
+   Elements: .hl(.zap|.selected) · .panel(.zap) › .panel-head(.panel-title .panel-count) .panel-input
+   .panel-row .panel-hint .panel-msg(.error) .panel-actions · .btn(.btn-primary)[data-act] */
+:host {
+  font: 12.5px/1.4 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; }
+
+/* The host element is reset with `all: initial` (keeps page CSS out), which also resets the inherited font,
+   so the panel sets it itself; controls inherit it. */
+.panel {
+  font: 12.5px/1.4 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+.panel button,
+.panel input {
+  font: inherit;
+}
+.panel .panel-input {
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+}
+[hidden] { display: none !important; }
+
+/* ── Highlight boxes (position/size set inline by JS) ── */
+.hl {
+  border: 2px solid #4f8ef7;
+  border-radius: 3px;
+  background: rgba(79, 142, 247, 0.12);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.55);
+  transition: transform 70ms ease-out, width 70ms ease-out, height 70ms ease-out;
+}
+
+.hl.selected {
+  border-style: solid;
+  border-width: 2px;
+  background: rgba(79, 142, 247, 0.22);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.7), 0 0 0 4px rgba(79, 142, 247, 0.25);
+}
+
+.hl.zap {
+  border-color: #e05c5c;
+  background: rgba(224, 92, 92, 0.16);
+}
+
+/* ── Panel (fixed bottom-right inline) ── */
+.panel {
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid #333;
+  border-radius: 10px;
+  background: #1c1c1c;
+  color: #e6e6e6;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  animation: pk-in 120ms ease-out;
+}
+
+.panel.zap { border-top: 3px solid #e05c5c; }
+
+@keyframes pk-in {
+  from { opacity: 0; transform: translateY(6px); }
+}
+
+.panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.panel-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.panel-count {
+  font-size: 11.5px;
+  color: #a3a3a3;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.panel-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #3a3a3a;
+  border-radius: 6px;
+  background: #111;
+  color: #e6e6e6;
+  font: 12px/1.4 'Cascadia Mono', Consolas, ui-monospace, monospace;
+  outline: none;
+}
+
+.panel-input:focus { border-color: #4f8ef7; }
+
+.panel-row,
+.panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.panel-actions { justify-content: flex-end; }
+
+.panel-hint {
+  font-size: 11.5px;
+  color: #a3a3a3;
+}
+
+.panel-msg {
+  font-size: 11.5px;
+  color: #a3a3a3;
+}
+
+.panel-msg:empty { display: none; }
+.panel-msg.error { color: #ff8a8a; }
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 12px;
+  border: 1px solid #3a3a3a;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 80ms, border-color 80ms;
+}
+
+.btn:hover { background: rgba(255, 255, 255, 0.08); }
+.btn:focus-visible { outline: 2px solid #4f8ef7; outline-offset: 1px; }
+.btn:disabled { opacity: 0.45; cursor: default; }
+.btn:disabled:hover { background: transparent; }
+
+/* #2f6fde keeps white text at AA (≈4.7:1) */
+.btn-primary,
+.btn[data-act="create"]:not(.btn-primary) {
+  border-color: #2f6fde;
+  background: #2f6fde;
+  color: #fff;
+  font-weight: 600;
+}
+
+.btn-primary:hover,
+.btn[data-act="create"]:not(.btn-primary):hover { border-color: #3a7bea; background: #3a7bea; }
+.btn-primary:disabled:hover { background: #2f6fde; }
+
+.panel.zap .btn-primary { border-color: #c93b3b; background: #c93b3b; }
+.panel.zap .btn-primary:hover { border-color: #d64a4a; background: #d64a4a; }
+
+/* ── Light ── */
+@media (prefers-color-scheme: light) {
+  :host { color-scheme: light; }
+  .hl { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.8); }
+  .panel { border-color: #ddd; background: #fff; color: #1f1f1f; box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16); }
+  .panel.zap { border-top-color: #c93b3b; }
+  .panel-title { color: #111; }
+  .panel-input { border-color: #d0d0d0; background: #f7f7f7; color: #1f1f1f; }
+  .panel-count, .panel-hint, .panel-msg { color: #5c5c5c; }
+  .panel-msg.error { color: #b02a2a; }
+  .btn { border-color: #d0d0d0; }
+  .btn:hover { background: rgba(0, 0, 0, 0.06); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hl { transition: none; }
+  .panel { animation: none; }
+}

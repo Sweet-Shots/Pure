@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- CSP is sent as a response header by main/protocol.js -->
+    <title>Pure Browser</title>
+    <link rel="stylesheet" href="./styles/variables.css" />
+    <link rel="stylesheet" href="./styles/layout.css" />
+    <link rel="stylesheet" href="./styles/tabs.css" />
+    <link rel="stylesheet" href="./styles/address-bar.css" />
+    <link rel="stylesheet" href="./styles/sidebar.css" />
+    <link rel="stylesheet" href="./styles/findbar.css" />
+    <link rel="stylesheet" href="./styles/welcome.css" />
+    <link rel="stylesheet" href="./styles/popovers.css" />
+    <link rel="stylesheet" href="./styles/groups.css" />
+    <link rel="stylesheet" href="./styles/modes.css" />
+  </head>
+  <body>
+    <div id="shell">
+      <!-- ── Focus mode: hover strip that reveals the chrome (displayed only under html.focus-mode) ── -->
+      <div id="focus-reveal" aria-hidden="true"></div>
+
+      <!-- ── Title bar: tab strip + window controls ── -->
+      <div id="titlebar">
+        <div id="tabs-scroll">
+          <div id="tabs" role="tablist" aria-label="Tabs"><!-- tabs injected by JS --></div>
+          <div id="tab-drop-indicator"></div>
+        </div>
+        <button id="btn-new-tab" type="button" title="New tab (Ctrl+T)" aria-label="New tab">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+        </button>
+        <div id="titlebar-right">
+          <div id="win-controls">
+            <button id="btn-wmin" type="button" title="Minimize" aria-label="Minimize">
+              <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/></svg>
+            </button>
+            <button id="btn-wmax" type="button" title="Maximize" aria-label="Maximize">
+              <svg class="icon ico-max" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect width="18" height="18" x="3" y="3" rx="2"/></svg>
+              <svg class="icon ico-restore" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+            </button>
+            <button id="btn-wclose" type="button" title="Close" aria-label="Close window">
+              <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Navigation toolbar ── -->
+      <div id="toolbar">
+        <button class="nav-btn" id="btn-back" type="button" title="Back (Alt+Left)" aria-label="Back" disabled>
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+        </button>
+        <button class="nav-btn" id="btn-forward" type="button" title="Forward (Alt+Right)" aria-label="Forward" disabled>
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </button>
+        <button class="nav-btn" id="btn-reload" type="button" title="Reload (Ctrl+R)" aria-label="Reload">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" id="icon-reload"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" id="icon-stop" style="display: none"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+        <button class="nav-btn" id="btn-home" type="button" title="Home" aria-label="Home">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        </button>
+
+        <div id="address-wrap">
+          <button id="lock-icon" type="button" title="View site information" aria-label="View site information" aria-haspopup="dialog" aria-controls="site-popover">
+            <!-- default (no class): search -->
+            <svg class="icon ico-search" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+            <!-- .secure: closed padlock -->
+            <svg class="icon ico-lock" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <!-- .insecure: warning -->
+            <svg class="icon ico-insecure" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+            <!-- .internal: Pure pages -->
+            <svg class="icon ico-internal" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+          </button>
+          <input
+            id="address-bar"
+            type="text"
+            spellcheck="false"
+            autocomplete="off"
+            placeholder="Search or type a URL"
+            aria-label="Address and search bar"
+            aria-controls="suggestions"
+            aria-autocomplete="list"
+          />
+          <button id="zoom-indicator" type="button" title="Reset zoom (Ctrl+0)" aria-label="Reset zoom">100%</button>
+          <button class="nav-btn" id="btn-reader" type="button" title="Reader mode (F9)" aria-label="Reader mode" aria-pressed="false" hidden>
+            <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v16"/><path d="M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+          </button>
+          <button class="nav-btn" id="btn-shield" type="button" title="Purify — ad &amp; tracker blocking" aria-label="Purify, ad and tracker blocking" aria-haspopup="dialog" aria-controls="shield-popover">
+            <svg class="icon ico-shield" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+            <svg class="icon ico-shield-off" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m2 2 20 20"/><path d="M5 5a1 1 0 0 0-1 1v7c0 5 3.5 7.5 7.67 8.94a1 1 0 0 0 .67.01c2.35-.82 4.48-1.97 5.9-3.71"/><path d="M9.309 3.652A12.252 12.252 0 0 0 11.24 2.28a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1v7a9.784 9.784 0 0 1-.08 1.264"/></svg>
+            <span id="shield-count" aria-hidden="true" hidden>0</span>
+          </button>
+          <button class="nav-btn" id="btn-bookmark" type="button" title="Bookmark this page (Ctrl+D)" aria-label="Bookmark this page">
+            <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></svg>
+          </button>
+          <div id="suggestions" role="listbox" aria-label="Suggestions"></div>
+
+          <!-- Shield popover: drawn over the (frozen) page area, anchored under the bar's right side -->
+          <div id="shield-popover" role="dialog" aria-label="Purify">
+            <div class="shield-head">
+              <svg class="icon shield-head-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+              <span id="shield-host" class="shield-host"></span>
+              <span class="shield-brand">Purify</span>
+            </div>
+            <div class="shield-summary">
+              <span id="shield-blocked" class="shield-blocked">0</span>
+              <span class="shield-blocked-label">blocked on this page</span>
+            </div>
+            <label class="shield-toggle-row" for="shield-toggle">
+              <span>Purify on this site</span>
+              <span class="shield-switch">
+                <input type="checkbox" id="shield-toggle" role="switch" checked />
+                <span class="shield-switch-track" aria-hidden="true"></span>
+              </span>
+            </label>
+            <div id="shield-list" class="shield-list" aria-label="Blocked domains"></div>
+            <div class="shield-tools">
+              <button type="button" class="pop-btn shield-tool" id="shield-pick" data-action="pick-element" title="Pick something on the page to hide it for good"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14 4.1 12 6"/><path d="m5.1 8-2.9-.8"/><path d="m6 12-1.9 2"/><path d="M7.2 2.2 8 5.1"/><path d="M9.037 9.69a.498.498 0 0 1 .653-.653l11 4.5a.5.5 0 0 1-.074.949l-4.349 1.041a1 1 0 0 0-.74.739l-1.04 4.35a.5.5 0 0 1-.95.074z"/></svg><span>Block an element</span></button>
+              <button type="button" class="pop-btn shield-tool" id="shield-zap" data-action="zap-element" title="Remove things from this page until it reloads"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15.914 4a1.5 1.5 0 0 0-2.474-1.561l-9 9A1.5 1.5 0 0 0 5.5 14h4.002a.5.5 0 0 1 .471.666L8.086 20a1.5 1.5 0 0 0 2.475 1.56l9-9A1.5 1.5 0 0 0 18.5 10h-3.997a.5.5 0 0 1-.472-.667z"/></svg><span>Zap element</span></button>
+            </div>
+            <div class="shield-foot">
+              <a href="#" data-action="open-blocking-stats">View all-time stats</a>
+            </div>
+          </div>
+
+          <!-- Site info popover: drawn over the (frozen) page area, anchored under the bar's left side -->
+          <div id="site-popover" role="dialog" aria-label="Site information">
+            <div class="site-head">
+              <span id="site-host" class="site-host"></span>
+              <span id="site-status" class="site-status" role="status"></span>
+            </div>
+            <div class="pop-label" id="site-perms-label">Permissions</div>
+            <div id="site-perms" class="site-perms" role="group" aria-labelledby="site-perms-label"><!-- .site-perm-row › .site-perm-name + select.site-perm-select[data-permission] --></div>
+            <div class="site-stats">
+              <div class="site-stat">
+                <svg class="icon site-stat-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 17h.01"/><path d="M11.496 2c.324-.016.558.292.529.615a4 4 0 0 0 4.235 4.368.713.713 0 0 1 .758.757 4 4 0 0 0 4.366 4.237c.323-.03.63.204.614.527a10 10 0 0 1-2.915 6.566A10 10 0 1 1 11.496 2"/><path d="M12 12h.01"/><path d="M16 16h.01"/><path d="M7 14h.01"/><path d="M9 8h.01"/></svg>
+                <span id="site-cookies" class="site-stat-value">0</span>
+                <span class="site-stat-label">Cookies</span>
+              </div>
+              <div class="site-stat">
+                <svg class="icon site-stat-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m4.243 5.21 14.39 12.472"/></svg>
+                <span id="site-blocked" class="site-stat-value">0</span>
+                <span class="site-stat-label">Blocked</span>
+              </div>
+              <div class="site-stat">
+                <svg class="icon site-stat-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6"/><path d="M8 11h6"/></svg>
+                <span id="site-zoom" class="site-stat-value">100%</span>
+                <span class="site-stat-label">Zoom</span>
+              </div>
+            </div>
+            <div class="site-foot">
+              <button type="button" class="pop-btn pop-btn-danger" data-action="site-clear-data"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg><span>Clear site data</span></button>
+              <button type="button" class="pop-btn" data-action="site-all-settings"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg><span>Site settings</span></button>
+            </div>
+          </div>
+        </div>
+
+        <div id="toolbar-right">
+          <button class="nav-btn" id="btn-bookmarks-toggle" type="button" title="Bookmarks bar (Ctrl+Shift+B)" aria-label="Toggle bookmarks bar">
+            <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z"/></svg>
+          </button>
+          <button class="nav-btn" id="btn-downloads" type="button" title="Downloads" aria-label="Downloads">
+            <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>
+            <span id="downloads-progress" hidden></span>
+          </button>
+          <button class="nav-btn" id="btn-incognito" type="button" title="New incognito window (Ctrl+Shift+N)" aria-label="New incognito window">
+            <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14 18a2 2 0 0 0-4 0"/><path d="m19 11-2.11-6.657a2 2 0 0 0-2.752-1.148l-1.276.61A2 2 0 0 1 12 4H8.5a2 2 0 0 0-1.925 1.456L5 11"/><path d="M2 11h20"/><circle cx="17" cy="18" r="3"/><circle cx="7" cy="18" r="3"/></svg>
+          </button>
+          <div id="ext-actions" role="group" aria-label="Extensions" hidden><!-- button.ext-action[data-ext-id] › img + .ext-badge --></div>
+          <button class="nav-btn" id="btn-settings" type="button" title="Settings" aria-label="Settings">
+            <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+
+        <!-- Page-load progress line, drawn on the toolbar's bottom edge (outside the native page area) -->
+        <div id="loader" aria-hidden="true"></div>
+      </div>
+
+      <!-- ── Save-password bar (in flow, directly under the toolbar) ── -->
+      <div id="pw-bar" role="region" aria-label="Save password" aria-live="polite" hidden>
+        <svg class="icon pw-bar-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></svg>
+        <span id="pw-bar-text">Save password?</span>
+        <div class="pw-bar-actions">
+          <button type="button" class="bar-btn bar-btn-primary" data-action="pw-save">Save</button>
+          <button type="button" class="bar-btn" data-action="pw-never">Never</button>
+          <button type="button" class="nav-btn pw-bar-close" data-action="pw-dismiss" title="Dismiss" aria-label="Dismiss"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+        </div>
+      </div>
+
+      <!-- ── Bookmarks bar ── -->
+      <div id="bookmark-sidebar" aria-label="Bookmarks bar">
+        <div id="bookmark-list"></div>
+      </div>
+
+      <!-- ── Find bar ── -->
+      <div id="findbar" role="search">
+        <div class="find-field">
+          <svg class="icon find-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+          <input id="find-input" type="text" spellcheck="false" autocomplete="off" placeholder="Find in page…" aria-label="Find in page" />
+        </div>
+        <span id="find-count" aria-live="polite"></span>
+        <button id="find-prev" type="button" title="Previous (Shift+Enter)" aria-label="Previous match">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m18 15-6-6-6 6"/></svg>
+        </button>
+        <button id="find-next" type="button" title="Next (Enter)" aria-label="Next match">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <button id="find-close" type="button" title="Close (Esc)" aria-label="Close find bar">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+
+      <!-- ── Page area: the native page view is drawn over this box ── -->
+      <div id="views">
+        <img id="page-freeze" alt="" draggable="false" />
+        <div id="split-divider" role="separator" aria-orientation="vertical" aria-label="Resize split view" title="Drag to resize · double-click to reset" hidden></div>
+      </div>
+
+      <!-- ── Status bar ── -->
+      <div id="statusbar">
+        <span id="status-text">Ready</span>
+      </div>
+    </div>
+
+    <!-- ── Command palette (Ctrl+K) / tab search (Ctrl+Shift+A) — drawn over the frozen page ── -->
+    <div id="palette" role="dialog" aria-label="Command palette">
+      <div class="palette-field">
+        <svg class="icon palette-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        <span id="palette-mode" class="palette-chip" hidden>@tabs</span>
+        <input id="palette-input" type="text" spellcheck="false" autocomplete="off" placeholder="Search tabs, bookmarks, history and commands" aria-label="Search tabs, bookmarks, history and commands" aria-controls="palette-list" aria-autocomplete="list" />
+      </div>
+      <div id="palette-list" role="listbox" aria-label="Results"><!-- .pal-section, .pal-item[data-index][data-kind] › .pal-icon .pal-title .pal-sub .pal-kind (flat children) --></div>
+      <div id="palette-empty" hidden>No matches</div>
+      <div class="palette-foot" aria-hidden="true">
+        <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
+        <span><kbd>↵</kbd> open</span>
+        <span><kbd>esc</kbd> close</span>
+      </div>
+    </div>
+
+    <!-- ── Tab group editor (right-click a group chip) — drawn over the frozen page; JS sets left/top ── -->
+    <div id="group-editor" role="dialog" aria-label="Edit tab group">
+      <input id="group-title" type="text" spellcheck="false" autocomplete="off" placeholder="Name this group" aria-label="Group name" />
+      <div id="group-colors" role="radiogroup" aria-label="Group color">
+        <button type="button" class="group-swatch" data-color="grey" role="radio" aria-checked="false" title="Grey" aria-label="Grey"></button>
+        <button type="button" class="group-swatch" data-color="blue" role="radio" aria-checked="false" title="Blue" aria-label="Blue"></button>
+        <button type="button" class="group-swatch" data-color="red" role="radio" aria-checked="false" title="Red" aria-label="Red"></button>
+        <button type="button" class="group-swatch" data-color="yellow" role="radio" aria-checked="false" title="Yellow" aria-label="Yellow"></button>
+        <button type="button" class="group-swatch" data-color="green" role="radio" aria-checked="false" title="Green" aria-label="Green"></button>
+        <button type="button" class="group-swatch" data-color="pink" role="radio" aria-checked="false" title="Pink" aria-label="Pink"></button>
+        <button type="button" class="group-swatch" data-color="purple" role="radio" aria-checked="false" title="Purple" aria-label="Purple"></button>
+        <button type="button" class="group-swatch" data-color="cyan" role="radio" aria-checked="false" title="Cyan" aria-label="Cyan"></button>
+        <button type="button" class="group-swatch" data-color="orange" role="radio" aria-checked="false" title="Orange" aria-label="Orange"></button>
+      </div>
+      <div class="group-actions">
+        <button type="button" class="pop-btn" data-action="group-ungroup"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 3a2 2 0 0 0-2 2"/><path d="M19 3a2 2 0 0 1 2 2"/><path d="M21 19a2 2 0 0 1-2 2"/><path d="M5 21a2 2 0 0 1-2-2"/><path d="M9 3h1"/><path d="M9 21h1"/><path d="M14 3h1"/><path d="M14 21h1"/><path d="M3 9v1"/><path d="M21 9v1"/><path d="M3 14v1"/><path d="M21 14v1"/></svg><span>Ungroup</span></button>
+        <button type="button" class="pop-btn pop-btn-danger" data-action="group-close-tabs"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg><span>Close tabs</span></button>
+      </div>
+    </div>
+
+    <!-- ── Welcome overlay (pure CSS, ≤ 1.2 s) ── -->
+    <div id="welcome-overlay" aria-hidden="true">
+      <div id="welcome-corner-info">
+        <div id="welcome-version"></div>
+      </div>
+      <div id="welcome-content">
+        <div id="welcome-text">
+          <div id="welcome-label">Welcome to</div>
+          <div id="welcome-logo">
+            <span id="logo-char-0">P</span>
+            <span id="logo-char-1">U</span>
+            <span id="logo-char-2">R</span>
+            <span id="logo-char-3">E</span>
+          </div>
+          <div id="welcome-tagline"></div>
+        </div>
+        <div id="welcome-bar"></div>
+        <div id="welcome-status">Initializing...</div>
+      </div>
+    </div>
+
+    <script type="module" src="./js/app.js"></script>
+  </body>
+</html>

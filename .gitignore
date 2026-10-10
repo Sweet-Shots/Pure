@@ -1,0 +1,12 @@
+# Dependencies and build output
+node_modules/
+dist/
+
+# Old 1.1.1 reference files used during the rewrite
+_reference/
+
+# Local junk
+*.log
+*.tmp
+.DS_Store
+Thumbs.db

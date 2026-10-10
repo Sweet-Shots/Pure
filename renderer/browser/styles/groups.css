@@ -1,0 +1,221 @@
+/* ═══════════════════════════════════════════════════════════
+   Tab groups
+   button.tab-group[data-group-id] (+ .collapsed, optional [data-count]) before
+   the first tab of each group; .tab[data-group-id] for member tabs.
+   JS sets --group-color on both, preferably to the palette token:
+     el.style.setProperty('--group-color', `var(--group-${color})`)
+   #group-editor (+ .open) › #group-title, #group-colors › button[data-color] (+ .selected),
+   [data-action="group-ungroup"], [data-action="group-close-tabs"]
+   ═══════════════════════════════════════════════════════════ */
+
+/* Palette — dark theme: light pastel fills with dark ink (AA ≥ 7:1) */
+:root {
+  --group-grey:   #bdc1c6;
+  --group-blue:   #8ab4f8;
+  --group-red:    #f28b82;
+  --group-yellow: #fdd663;
+  --group-green:  #81c995;
+  --group-pink:   #ff8bcb;
+  --group-purple: #c58af9;
+  --group-cyan:   #78d9ec;
+  --group-orange: #fcad70;
+  --group-ink:    #141414;
+}
+
+/* Light theme: deep fills with white ink (AA ≥ 4.5:1) */
+@media (prefers-color-scheme: light) {
+  :root {
+    --group-grey:   #5f6368;
+    --group-blue:   #1967d2;
+    --group-red:    #c5221f;
+    --group-yellow: #8a5a00;
+    --group-green:  #137333;
+    --group-pink:   #b80672;
+    --group-purple: #8430ce;
+    --group-cyan:   #00727a;
+    --group-orange: #ad4a00;
+    --group-ink:    #ffffff;
+  }
+}
+
+/* Swatch / chip colours by name too (for markup that carries data-color) */
+[data-color="grey"]   { --group-color: var(--group-grey); }
+[data-color="blue"]   { --group-color: var(--group-blue); }
+[data-color="red"]    { --group-color: var(--group-red); }
+[data-color="yellow"] { --group-color: var(--group-yellow); }
+[data-color="green"]  { --group-color: var(--group-green); }
+[data-color="pink"]   { --group-color: var(--group-pink); }
+[data-color="purple"] { --group-color: var(--group-purple); }
+[data-color="cyan"]   { --group-color: var(--group-cyan); }
+[data-color="orange"] { --group-color: var(--group-orange); }
+
+/* ── Group chip in the strip ── */
+.tab-group {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  flex-shrink: 0;
+  height: 22px;
+  max-width: 140px;
+  min-width: 22px;
+  margin: 0 2px;
+  padding: 0 9px;
+  border: none;
+  border-radius: 11px;
+  background: var(--group-color, var(--group-grey));
+  color: var(--group-ink);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+  transition: opacity 0.1s;
+}
+
+.tab-group:hover {
+  opacity: 0.88;
+}
+
+/* No title → just a dot */
+.tab-group:empty {
+  width: 12px;
+  min-width: 12px;
+  height: 12px;
+  padding: 0;
+  margin: 0 6px;
+  border-radius: 50%;
+}
+
+/* Collapsed: hollow chip in the group colour + optional count bubble */
+.tab-group.collapsed {
+  background: color-mix(in srgb, var(--group-color, var(--group-grey)) 18%, transparent);
+  box-shadow: inset 0 0 0 1.5px var(--group-color, var(--group-grey));
+  color: var(--text);
+}
+
+.tab-group.collapsed:empty {
+  background: transparent;
+}
+
+.tab-group.collapsed[data-count]::after {
+  content: attr(data-count);
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--group-color, var(--group-grey));
+  color: var(--group-ink);
+  font-size: 9.5px;
+  line-height: 15px;
+  text-align: center;
+}
+
+.tab-group:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* ── Member tabs: 2 px line in the group colour along the bottom edge ── */
+.tab[data-group-id]::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: 0;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--group-color, var(--group-grey));
+  pointer-events: none;
+}
+
+/* ── Group editor popover (fixed; JS sets left/top near the chip) ── */
+#group-editor {
+  position: fixed;
+  top: 40px;
+  left: 8px;
+  z-index: 200;
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  width: 248px;
+  padding: 12px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-pop);
+  user-select: none;
+}
+
+#group-editor.open {
+  display: flex;
+  animation: pop-in 0.12s ease-out;
+}
+
+#group-title {
+  width: 100%;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-input);
+  color: var(--text);
+  font-size: 13px;
+  transition: border-color 0.15s;
+}
+
+#group-title::placeholder {
+  color: var(--text-dim);
+}
+
+#group-title:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+#group-colors {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 4px;
+  justify-items: center;
+}
+
+.group-swatch,
+#group-colors button {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--group-color, var(--group-grey));
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+#group-colors button:hover {
+  transform: scale(1.12);
+}
+
+#group-colors button.selected {
+  box-shadow: 0 0 0 2px var(--bg-raised), 0 0 0 4px var(--group-color, var(--group-grey));
+}
+
+#group-colors button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.group-actions {
+  display: flex;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.group-actions .pop-btn {
+  flex: 1;
+}
