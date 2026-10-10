@@ -1,0 +1,38 @@
+name: Site broken by Purify
+description: A website looks wrong, won't load, or still shows ads.
+title: "Broken site: "
+labels: ["purify"]
+body:
+  - type: input
+    id: site
+    attributes:
+      label: Site
+      description: Just the address, e.g. example.com
+    validations:
+      required: true
+  - type: dropdown
+    id: problem
+    attributes:
+      label: What's wrong?
+      options:
+        - The page is broken or won't load
+        - Ads still show
+        - A video won't play
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: What did you expect, and what happened instead? Does it work with Purify off for the site?
+  - type: input
+    id: level
+    attributes:
+      label: Purify level
+      description: Full, Balanced or Off
+  - type: input
+    id: version
+    attributes:
+      label: Pure version
+      description: Settings › About

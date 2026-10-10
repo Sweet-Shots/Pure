@@ -4,7 +4,7 @@
 // The popover freezes the live page like the suggestions dropdown does, so it can draw over it.
 
 import { $, el, pure } from './util.js';
-import { on, activeTab } from './state.js';
+import { S, on, activeTab } from './state.js';
 import { acquireFreeze, registerOverlay, claimOverlay } from './freeze.js';
 
 const btn = $('btn-shield');
@@ -14,6 +14,8 @@ const hostEl = $('shield-host');
 const blockedEl = $('shield-blocked');
 const toggle = $('shield-toggle');
 const list = $('shield-list');
+const levelEl = $('shield-level'); // 2.4: Full / Balanced segmented control (visuals adds the markup)
+const reportEl = $('shield-report'); // 2.4: "Report a broken site" (hidden in incognito)
 
 const fmtPlain = new Intl.NumberFormat();
 const fmtCompact = new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 });
@@ -28,6 +30,7 @@ const current = {
   pure: true, // pure:// page or no tab: shield hidden
   host: '',
   enabled: true, // blocking on for this host (main's answer)
+  level: 'strict', // this host's Purify level: 'strict' (Full) | 'balanced'
   blocked: 0,
   domains: [],
 };
@@ -56,6 +59,26 @@ function renderState() {
   hostEl.textContent = current.host;
   toggle.disabled = !globalOn || !current.host;
   toggle.checked = globalOn && (!current.host || current.enabled);
+  renderLevel();
+  renderReport();
+}
+
+// The level control only means something while Purify runs on this site.
+function renderLevel() {
+  if (!levelEl) return;
+  // Hidden with the global level at Balanced: a per-site level only switches a site down from Full.
+  levelEl.hidden = !globalOn || !current.host || !current.enabled || !!current.globalBalanced;
+  for (const b of levelEl.querySelectorAll('button[data-level]')) {
+    const on = b.dataset.level === current.level;
+    b.classList.toggle('selected', on);
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+}
+
+// Reporting needs a web page, and never happens in incognito.
+function renderReport() {
+  if (!reportEl) return;
+  reportEl.hidden = S.incognito || current.pure || !current.host;
 }
 
 function renderList() {
@@ -86,6 +109,8 @@ async function loadInfo(id) {
   counts.set(String(id), Number(info.blocked) || 0);
   current.host = typeof info.host === 'string' ? info.host : '';
   current.enabled = info.enabled !== false;
+  current.level = info.level === 'balanced' ? 'balanced' : 'strict';
+  current.globalBalanced = info.globalLevel === 'balanced';
   current.domains = Array.isArray(info.domains) ? info.domains : [];
   current.blocked = Number(info.blocked) || 0;
   renderState();
@@ -134,6 +159,7 @@ function onActive() {
   current.pure = !t || isPureUrl(current.url);
   current.host = '';
   current.enabled = true;
+  current.level = 'strict';
   current.domains = [];
   setBlocked(current.id !== null ? counts.get(String(current.id)) || 0 : 0);
   renderState();
@@ -174,6 +200,37 @@ async function onToggle() {
   pure.tabs.reload(id, false);
 }
 
+// Full / Balanced for this site. Main answers with the effective level (it can differ while the global
+// blocking level is Balanced); the tab reloads so the document-start scriptlets follow the new level.
+async function onLevel(level) {
+  const id = current.id;
+  const host = current.host;
+  if (id === null || !host || current.pure || (level !== 'strict' && level !== 'balanced')) return;
+  if (level === current.level) return;
+  let effective = null;
+  try {
+    effective = await pure.blocking.setSiteLevel(host, level);
+  } catch {
+    return;
+  }
+  // The user may have switched tabs while main answered.
+  if (current.id !== id || current.host !== host) return;
+  current.level = effective === 'balanced' ? 'balanced' : 'strict';
+  renderLevel();
+  pure.tabs.reload(id, false);
+}
+
+function onReport() {
+  const id = current.id;
+  if (id === null || current.pure || !current.host || S.incognito) return;
+  closePopover();
+  try {
+    pure.blocking.reportBroken(id);
+  } catch {
+    // main refuses in incognito and for pages without a host
+  }
+}
+
 export function initShield() {
   if (!btn || !box || !count || !toggle || !list) return;
 
@@ -184,7 +241,7 @@ export function initShield() {
 
   box.addEventListener('click', (e) => {
     const link = e.target instanceof Element ? e.target.closest('a[data-action="open-blocking-stats"]') : null;
-    if (!link) return;
+    if (!link || S.incognito) return;
     e.preventDefault();
     closePopover();
     pure.tabs.create({ url: 'pure://settings/#privacy', active: true }).catch(() => {});
@@ -206,6 +263,19 @@ export function initShield() {
   });
 
   toggle.addEventListener('change', onToggle);
+
+  if (levelEl) {
+    levelEl.addEventListener('click', (e) => {
+      const b = e.target instanceof Element ? e.target.closest('button[data-level]') : null;
+      if (b && levelEl.contains(b)) onLevel(b.dataset.level);
+    });
+  }
+  if (reportEl) {
+    reportEl.addEventListener('click', (e) => {
+      e.preventDefault();
+      onReport();
+    });
+  }
 
   // Click outside closes. Capture phase, so a page snapshot (#views) click also closes it.
   document.addEventListener(

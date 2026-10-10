@@ -47,6 +47,10 @@ html.incognito {
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 html,
 body {
   height: 100%;
@@ -114,7 +118,8 @@ body {
 html[data-kind="generic"] .ico-generic,
 html[data-kind="offline"] .ico-offline,
 html[data-kind="cert"] .ico-cert,
-html[data-kind="crashed"] .ico-crashed {
+html[data-kind="crashed"] .ico-crashed,
+html[data-kind="insecure"] .ico-insecure {
   display: block;
 }
 
@@ -194,6 +199,19 @@ html.offline .error-icon {
 
 .btn-secondary:hover {
   background: var(--bg-btn-hover);
+}
+
+/* HTTPS-only "Continue (not secure)": a quiet danger action under the main buttons */
+.btn-unsafe {
+  margin: -12px 0 28px;
+  border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
+  background: transparent;
+  color: var(--danger);
+}
+
+.btn-unsafe:hover {
+  border-color: color-mix(in srgb, var(--danger) 60%, var(--border));
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
 }
 
 /* ── Code ── */

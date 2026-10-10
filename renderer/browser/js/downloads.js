@@ -22,6 +22,8 @@ function render() {
     }
   }
   btn.classList.toggle('active', active > 0);
+  // 2.4: a risky download is waiting for Keep / Discard (answered in the toast).
+  btn.classList.toggle('warn', all.some((d) => !!d.warning));
   prog.hidden = active === 0;
   const p = total > 0 ? Math.min(1, received / total) : 0;
   prog.style.setProperty('--progress', p.toFixed(3));

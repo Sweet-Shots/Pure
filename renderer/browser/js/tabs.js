@@ -130,7 +130,7 @@ function updateAudio(rec, t) {
   if (show && !rec.audio) {
     rec.audio = el('button', 'tab-audio');
     rec.audio.type = 'button';
-    rec.node.insertBefore(rec.audio, rec.close);
+    rec.node.append(rec.audio); // layoutChildren() puts it in place
   } else if (!show && rec.audio) {
     rec.audio.remove();
     rec.audio = null;
@@ -154,7 +154,7 @@ function updateSleep(rec, t) {
   const show = !!t.isDiscarded;
   if (show && !rec.sleep) {
     rec.sleep = icon('moon', 'tab-sleeping', 'Tab sleeping');
-    rec.node.insertBefore(rec.sleep, rec.close);
+    rec.node.append(rec.sleep); // layoutChildren() puts it in place
   } else if (!show && rec.sleep) {
     rec.sleep.remove();
     rec.sleep = null;
@@ -181,14 +181,33 @@ function applyGroup(rec, t) {
   if (rec.node.hidden !== hide) rec.node.hidden = hide;
 }
 
+// Child order of a tab: favicon, title, audio, sleeping, close. A pinned tab is icon-only: it has no title
+// and no close button in the DOM (close is middle-click or Ctrl+W); its name is the native tooltip.
+function layoutChildren(rec, pinned) {
+  const want = [rec.wrap];
+  if (!pinned) want.push(rec.title);
+  if (rec.audio) want.push(rec.audio);
+  if (rec.sleep) want.push(rec.sleep);
+  if (!pinned) want.push(rec.close);
+  for (const c of [...rec.node.children]) if (!want.includes(c)) c.remove();
+  want.forEach((c, i) => {
+    if (rec.node.children[i] !== c) rec.node.insertBefore(c, rec.node.children[i] || null);
+  });
+}
+
 function updateRec(rec, t) {
+  const pinned = !!t.pinned;
   rec.node.classList.toggle('active', rec.k === S.activeKey);
   rec.node.classList.toggle('discarded', !!t.isDiscarded);
   rec.node.classList.toggle('crashed', !!t.crashed);
+  rec.node.classList.toggle('pinned', pinned);
+  const tip = pinned ? titleFor(t) : '';
+  if (rec.node.title !== tip) rec.node.title = tip;
   setText(rec.title, titleFor(t));
   updateFavicon(rec, t);
   updateAudio(rec, t);
   updateSleep(rec, t);
+  layoutChildren(rec, pinned);
   applyGroup(rec, t);
 }
 
@@ -518,6 +537,10 @@ function moveDrag(e) {
     const mid = p.mids.get(n);
     if (mid !== undefined && pos > mid) i++;
   }
+  // 2.4: pinned tabs lead the strip. A pinned tab stays among the pinned ones and an unpinned tab stays after
+  // them, in horizontal and vertical mode alike (main enforces the same rule in tabs:move).
+  const pinnedOthers = others.filter((n) => n.classList.contains('pinned')).length;
+  i = p.node.classList.contains('pinned') ? Math.min(i, pinnedOthers) : Math.max(i, pinnedOthers);
   const ref = others[i] || null;
   if (p.node.nextElementSibling !== ref) strip.insertBefore(p.node, ref);
   showDrop(i, others);

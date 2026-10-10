@@ -68,7 +68,9 @@ function registerIpc() {
     // 2.2
     'passwords', 'extensions', 'updater', 'palette', 'siteinfo', 'reader',
     // 2.3 — blocker
-    'filterlists', 'cosmetics', 'picker']) {
+    'filterlists', 'cosmetics', 'picker',
+    // 2.4
+    'privacy', 'tools', 'toast']) {
     const mod = load(name);
     if (mod && typeof mod.registerIpc === 'function') {
       attempt(`${name}.registerIpc`, () => mod.registerIpc(ipcMain));
@@ -95,7 +97,7 @@ async function boot() {
   registerIpc();
   sessions.getSession({ incognito: false }); // also configures the default session
   // 2.2 modules with startup work (each must be fast and never throw; heavy work goes async).
-  for (const name of ['dns', 'extensions', 'updater']) {
+  for (const name of ['dns', 'extensions', 'updater', 'privacy']) {
     const mod = load(name);
     if (mod && typeof mod.init === 'function') {
       try {
@@ -216,7 +218,8 @@ function start() {
       } catch (err) {
         log('[main] downloads flush failed:', err);
       }
-      for (const name of ['blocking', 'homepage', 'passwords', 'extensions', 'filterlists', 'picker']) {
+      // privacy last: clear-on-exit runs after everything else has written its data.
+      for (const name of ['blocking', 'homepage', 'passwords', 'extensions', 'filterlists', 'picker', 'privacy']) {
         try {
           await load(name)?.flush?.();
         } catch (err) {
@@ -227,6 +230,11 @@ function start() {
         await storage.flush();
       } catch (err) {
         log('[main] storage flush failed:', err);
+      }
+      try {
+        await load('windows')?.markCleanExit?.(); // 2.4: crash-recovery marker (E2)
+      } catch (err) {
+        log('[main] markCleanExit failed:', err);
       }
       await logger.flush();
     })();

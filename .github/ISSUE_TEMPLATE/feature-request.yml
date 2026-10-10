@@ -1,0 +1,11 @@
+name: Feature idea
+description: Suggest something for Pure.
+labels: ["idea"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: What would you like Pure to do, and why?
+    validations:
+      required: true

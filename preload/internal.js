@@ -129,6 +129,17 @@ if (location.protocol === 'pure:') {
       exit: () => send('reader:exit'),                          // back to the original page
     },
 
+    // ── 2.4 ──────────────────────────────────────────────────────────────────
+    // main/privacy.js (E3).
+    // Site = { host, permissions: [{origin, permission, decision}], purifyOff (bool), purifyLevel:'strict'|'balanced' }
+    privacy: {
+      allowHttp: (url) => invoke('privacy:allow-http', url),    // error page only: allow http for this host (this run) + load url
+    },
+    sites: {
+      list: () => invoke('sites:list'),                          // -> Site[] (only hosts with a non-default setting)
+      reset: (host) => invoke('sites:reset', host),              // permissions + Purify exception + level back to default
+    },
+
     // main/system.js
     clearBrowsingData: (what) => invoke('system:clear-data', what), // {cache,cookies,history,downloads}
     getSitePermissions: () => invoke('system:site-permissions'),     // -> [{origin, permission, decision}]

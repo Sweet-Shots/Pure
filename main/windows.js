@@ -2,6 +2,7 @@
 // session snapshot/restore and moving tabs between windows.
 // Circular requires (tabs/shortcuts) are safe: module.exports is only extended, never replaced.
 
+const fs = require('fs');
 const path = require('path');
 const { app, BrowserWindow, nativeImage, nativeTheme, screen } = require('electron');
 const sessions = require('./sessions');
@@ -19,11 +20,19 @@ const TAB_STRIP_HEIGHT = 40;
 const SESSION_DEBOUNCE_MS = 2000;
 const MAX_RESTORE_TABS = 200;
 const MAX_RESTORE_WINDOWS = 50;
+// 2.4 session files (profile/): the window snapshot keeps pinned flags, which storage's session.json drops.
+const SESSION_FILE = 'windows-session.json';
+const CRASH_FILE = 'windows-session-crash.json';   // a crashed session kept until the user answers the offer
+const MARKER_FILE = 'running.lock';                // present while Pure runs; removed by markCleanExit()
+const SNAPSHOT_VERSION = 1;
 
 const states = new Map(); // BrowserWindow -> window state
 let nextWindowId = 1;
 let sessionTimer = null;
 let lastSnapshot = [];
+let lastWritten = '';        // JSON of the last live snapshot written (skips identical writes)
+let writeChain = Promise.resolve();
+let crashOffer = null;       // windows of a crashed session the user has not answered (restoreSession off)
 
 function log(...args) {
   try { logger.log(...args); } catch { /* ignore */ }
@@ -114,9 +123,10 @@ function wireTheme() {
 
 // ── Creating windows ─────────────────────────────────────────────────────
 
-// createWindow({ incognito, urls, saved, bounds, empty })
+// createWindow({ incognito, urls, saved, pinned, bounds, empty })
 //   urls:   http(s) URLs opened as tabs (first one active); default is one home tab
 //   saved:  restore data from sanitizeSaved() (tabs, activeIndex, groups, split); tabs open lazily
+//   pinned: [{url, title}] pinned tabs opened first, unloaded (2.4); ignored when `saved` is given
 //   bounds: { x, y } optional screen position
 //   empty:  create no tabs (used when tabs are moved in right after creation)
 function createWindow(opts = {}) {
@@ -203,24 +213,43 @@ function createWindow(opts = {}) {
 
   if (opts.saved && Array.isArray(opts.saved.tabs) && opts.saved.tabs.length) {
     restoreTabs(state.tabs, opts.saved);
-  } else if (!opts.empty) {
-    const urls = Array.isArray(opts.urls) ? opts.urls.filter(isOpenableUrl) : [];
-    if (urls.length) {
-      urls.forEach((url, i) => state.tabs.createTab({ url, active: i === 0, user: false }));
-    } else {
-      state.tabs.createTab({ active: true });
+  } else {
+    if (Array.isArray(opts.pinned)) addPinned(state.tabs, opts.pinned);
+    if (!opts.empty) {
+      const urls = Array.isArray(opts.urls) ? opts.urls.filter(isOpenableUrl) : [];
+      if (urls.length) {
+        urls.forEach((url, i) => state.tabs.createTab({ url, active: i === 0, user: false }));
+      } else {
+        state.tabs.createTab({ active: true });
+      }
     }
   }
   return win;
 }
 
+// Pinned tabs are created unloaded (no webContents until clicked), in saved order.
+function addPinned(mgr, pins) {
+  for (const p of pins) {
+    if (p && isRestorableUrl(p.url)) mgr.createTab({ url: p.url, title: p.title, active: false, user: true, pinned: true });
+  }
+}
+
+// Restores tabs (pinned ones first, unloaded) plus their groups and split. The active tab is the saved one, but
+// a pinned tab is never the one that loads at startup while the window has an unpinned tab.
 function restoreTabs(mgr, saved) {
-  const created = saved.tabs.map((t) => mgr.createTab({ url: t.url, title: t.title, active: false, user: true }));
+  const created = saved.tabs.map((t) => mgr.createTab({
+    url: t.url,
+    title: t.title,
+    active: false,
+    user: true,
+    pinned: t.pinned === true,
+  }));
   const valid = created.filter(Boolean);
   if (!valid.length) return;
   mgr.applySavedLayout(created, saved);
   const idx = clamp(Number.isInteger(saved.activeIndex) ? saved.activeIndex : 0, 0, created.length - 1);
-  const target = created[idx] || valid[0];
+  let target = created[idx] || valid[0];
+  if (target.pinned) target = valid.find((t) => !t.pinned) || target;
   mgr.activate(target.id, { focus: false });
 }
 
@@ -405,6 +434,62 @@ function restoreEnabled() {
   return !!settingsSafe().restoreSession;
 }
 
+function profileDir() {
+  return path.join(app.getPath('userData'), 'profile');
+}
+
+function profilePath(name) {
+  return path.join(profileDir(), name);
+}
+
+async function fileExists(file) {
+  try {
+    await fs.promises.access(file);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function removeQuiet(file) {
+  try {
+    await fs.promises.unlink(file);
+  } catch { /* already gone */ }
+}
+
+// Saved windows from a snapshot file: null when there is no file, [] when it cannot be read.
+async function readSnapshot(file) {
+  let raw;
+  try {
+    raw = await fs.promises.readFile(file, 'utf8');
+  } catch {
+    return null;
+  }
+  try {
+    const data = JSON.parse(raw);
+    return sanitizeSaved(data && Array.isArray(data.windows) ? data.windows : []);
+  } catch (e) {
+    log('session file unreadable:', e && e.message);
+    return [];
+  }
+}
+
+// Atomic write (temp file + rename). Writes are queued, so they never interleave. `dedupe` skips the write
+// when the content did not change since the last live write.
+function writeSnapshot(name, windows, { dedupe = false } = {}) {
+  const json = JSON.stringify({ v: SNAPSHOT_VERSION, windows });
+  writeChain = writeChain.then(async () => {
+    if (dedupe && json === lastWritten) return;
+    await fs.promises.mkdir(profileDir(), { recursive: true });
+    const file = profilePath(name);
+    const tmp = file + '.tmp';
+    await fs.promises.writeFile(tmp, json, 'utf8');
+    await fs.promises.rename(tmp, file);
+    if (dedupe) lastWritten = json;
+  }).catch((e) => log('session save failed:', e && e.message));
+  return writeChain;
+}
+
 function takeSnapshot() {
   const out = [];
   for (const st of states.values()) {
@@ -422,14 +507,9 @@ function refreshSnapshot() {
   return lastSnapshot;
 }
 
+// Live snapshot, written whatever restoreSession is: crash recovery needs it. Startup decides what to use.
 function writeSession() {
-  if (!restoreEnabled()) return Promise.resolve();
-  try {
-    return Promise.resolve(storage.session.save(refreshSnapshot())).catch((e) => log('session save failed:', e && e.message));
-  } catch (e) {
-    log('session save failed:', e && e.message);
-    return Promise.resolve();
-  }
+  return writeSnapshot(SESSION_FILE, refreshSnapshot(), { dedupe: true });
 }
 
 // Debounced (2 s, coalesced) session write.
@@ -450,6 +530,44 @@ function saveSession() {
   return writeSession();
 }
 
+// Pinned tabs of saved windows, in order. They reopen at every startup.
+function pinnedOf(windows) {
+  const out = [];
+  for (const w of windows) {
+    for (const t of w.tabs) if (t.pinned) out.push({ url: t.url, title: t.title || '' });
+  }
+  return out;
+}
+
+// What a clean exit keeps when restoreSession is off: the pinned tabs only.
+function pinnedOnly(windows) {
+  return windows
+    .map((w) => ({ tabs: w.tabs.filter((t) => t.pinned), activeIndex: 0 }))
+    .filter((w) => w.tabs.length);
+}
+
+// The part of a saved window that is not pinned. Pinned tabs come first in saved windows, so the rest is a
+// suffix: indexes shift by the number of pinned tabs.
+function unpinnedPart(w) {
+  const P = w.tabs.filter((t) => t.pinned).length;
+  const tabs = w.tabs.slice(P);
+  const sp = w.split;
+  const split = sp && sp.left >= P && sp.right >= P
+    ? { left: sp.left - P, right: sp.right - P, ratio: sp.ratio }
+    : null;
+  return {
+    tabs,
+    activeIndex: Math.max(0, (Number.isInteger(w.activeIndex) ? w.activeIndex : 0) - P),
+    groups: w.groups || [],
+    split,
+  };
+}
+
+// Windows of a crash snapshot that have something besides pinned tabs to offer.
+function offerOf(windows) {
+  return windows.filter((w) => w.tabs.some((t) => !t.pinned));
+}
+
 // Validates one saved window: { tabs: [{url, title, group?}], activeIndex, groups: [{title, color,
 // collapsed}], split?: {left, right, ratio} }. Indexes of tabs that are dropped are remapped, so group and
 // split references follow the tabs that survive.
@@ -468,56 +586,173 @@ function sanitizeSaved(saved) {
         };
       })
       : [];
+    // Valid tabs keep their order; pinned ones move to the front (pinned tabs never belong to a group).
+    const kept = [];
+    w.tabs.slice(0, MAX_RESTORE_TABS).forEach((t, i) => {
+      if (t && typeof t === 'object' && isRestorableUrl(t.url)) kept.push({ t, i });
+    });
+    if (!kept.length) continue;
+    const ordered = [...kept.filter((k) => k.t.pinned === true), ...kept.filter((k) => k.t.pinned !== true)];
     const tabs = [];
     const remap = new Map(); // saved index -> index in `tabs`
-    w.tabs.slice(0, MAX_RESTORE_TABS).forEach((t, i) => {
-      if (!t || !isRestorableUrl(t.url)) return;
+    for (const { t, i } of ordered) {
       const entry = { url: t.url, title: typeof t.title === 'string' ? t.title.slice(0, 300) : '' };
-      if (Number.isInteger(t.group) && t.group >= 0 && t.group < groups.length) entry.group = t.group;
+      if (t.pinned === true) entry.pinned = true;
+      else if (Number.isInteger(t.group) && t.group >= 0 && t.group < groups.length) entry.group = t.group;
       remap.set(i, tabs.length);
       tabs.push(entry);
-    });
-    if (!tabs.length) continue;
+    }
     const savedActive = Number.isInteger(w.activeIndex) ? w.activeIndex : 0;
-    const activeIndex = remap.has(savedActive) ? remap.get(savedActive) : clamp(savedActive, 0, tabs.length - 1);
+    const activeIndex = remap.has(savedActive) ? remap.get(savedActive) : 0;
     const sp = w.split;
     let split = null;
     if (sp && Number.isInteger(sp.left) && Number.isInteger(sp.right) && sp.left !== sp.right &&
         remap.has(sp.left) && remap.has(sp.right)) {
-      split = {
-        left: remap.get(sp.left),
-        right: remap.get(sp.right),
-        ratio: Number.isFinite(sp.ratio) ? clamp(sp.ratio, 0.2, 0.8) : 0.5,
-      };
+      const l = remap.get(sp.left);
+      const r = remap.get(sp.right);
+      if (!tabs[l].pinned && !tabs[r].pinned) {
+        split = { left: l, right: r, ratio: Number.isFinite(sp.ratio) ? clamp(sp.ratio, 0.2, 0.8) : 0.5 };
+      }
     }
     out.push({ tabs, activeIndex, groups, split });
   }
   return out;
 }
 
-// Called by index.js at startup. Restores saved windows when restoreSession is on, otherwise opens
-// argv URLs (or a home tab) in one new window.
+// Called by index.js at startup.
+//  - restoreSession on: restores the saved windows (pinned tabs unloaded), exactly as before.
+//  - restoreSession off: one new window with the pinned tabs plus argv URLs (or a home tab). If the marker shows
+//    the last run crashed, the unpinned tabs of that run are offered once (sticky toast, see showCrashOffer).
 async function restoreOrCreate(argvUrls = []) {
   const urls = (Array.isArray(argvUrls) ? argvUrls : []).filter(isOpenableUrl);
-  let saved = [];
-  if (restoreEnabled()) {
+  const restore = restoreEnabled();
+  const crashed = await fileExists(profilePath(MARKER_FILE));
+  let saved = await readSnapshot(profilePath(SESSION_FILE));
+  if (saved === null && restore) {
+    // Upgrade path: the windows of an earlier version are in storage's session.json.
     try {
       saved = sanitizeSaved(await storage.session.load());
     } catch (e) {
       log('session load failed:', e && e.message);
     }
   }
-  if (!saved.length) return createWindow({ urls });
-  let first = null;
-  for (const s of saved) {
-    const win = createWindow({ saved: s });
-    if (!first) first = win;
+  saved = saved || [];
+
+  crashOffer = null;
+  if (!crashed) {
+    await removeQuiet(profilePath(CRASH_FILE));
+  } else if (restore) {
+    await removeQuiet(profilePath(CRASH_FILE)); // the normal session is restored below; nothing to offer
+  } else {
+    const aside = await readSnapshot(profilePath(CRASH_FILE));
+    if (aside !== null) {
+      // An earlier crash is still unanswered: keep its snapshot.
+      crashOffer = offerOf(aside);
+      if (!crashOffer.length) await removeQuiet(profilePath(CRASH_FILE));
+    } else {
+      // Move this crash's snapshot aside, so the writes of this run cannot overwrite it before the user answers.
+      crashOffer = offerOf(saved);
+      if (crashOffer.length) {
+        try {
+          await fs.promises.rename(profilePath(SESSION_FILE), profilePath(CRASH_FILE));
+          lastWritten = '';
+        } catch (e) {
+          log('crash snapshot not kept:', e && e.message);
+        }
+      }
+    }
+    if (!crashOffer.length) crashOffer = null;
   }
-  const st = getState(first);
-  if (st && urls.length) {
-    for (const url of urls) st.tabs.createTab({ url, active: true, user: false });
+
+  // The marker says "running": a crash leaves it behind.
+  try {
+    await fs.promises.mkdir(profileDir(), { recursive: true });
+    await fs.promises.writeFile(profilePath(MARKER_FILE), String(process.pid), 'utf8');
+  } catch (e) {
+    log('running marker not written:', e && e.message);
   }
-  return first;
+
+  if (restore && saved.length) {
+    let first = null;
+    for (const s of saved) {
+      const win = createWindow({ saved: s });
+      if (!first) first = win;
+    }
+    const st = getState(first);
+    if (st && urls.length) {
+      for (const url of urls) st.tabs.createTab({ url, active: true, user: false });
+    }
+    return first;
+  }
+
+  const win = createWindow({ urls, pinned: restore ? [] : pinnedOf(saved) });
+  // The toast waits for the page to finish loading (a message sent during did-finish-load is dropped by the toast
+  // module, which is still "loading" then), so it goes out on the next tick.
+  if (crashOffer) win.webContents.once('did-finish-load', () => setTimeout(() => showCrashOffer(win), 50));
+  return win;
+}
+
+// Sticky toast in the first window: "Pure didn't close properly. Restore your tabs?" (E5's main/toast.js).
+// If the toast module is missing or fails, the offer stays pending and is logged, nothing else changes.
+function showCrashOffer(win) {
+  if (!crashOffer || win.isDestroyed()) return;
+  let toast = null;
+  try {
+    toast = require('./toast');
+  } catch (e) {
+    log('crash offer not shown (toast unavailable):', e && e.message);
+    return;
+  }
+  if (!toast || typeof toast.show !== 'function') return;
+  try {
+    toast.show(win, {
+      id: 'restore',
+      kind: 'info',
+      text: "Pure didn't close properly. Restore your tabs?",
+      actions: [{ id: 'restore', label: 'Restore' }],
+    }, (actionId) => answerCrashOffer(actionId, win));
+  } catch (e) {
+    log('crash offer failed:', e && e.message);
+  }
+}
+
+// The user answered the offer. "restore" reopens the unpinned tabs: the first saved window's tabs go into the
+// window that showed the offer, the others open as new windows. Any other answer forgets them.
+function answerCrashOffer(actionId, win) {
+  const offer = crashOffer;
+  if (!offer) return;
+  // The toast reports 'dismiss' when its window closes too; closing is not an answer, so the offer stays for the
+  // next start (markCleanExit keeps the marker and the crash snapshot while it is pending).
+  if (actionId !== 'restore' && (!win || win.isDestroyed())) return;
+  crashOffer = null;
+  if (actionId === 'restore') {
+    let into = win && !win.isDestroyed() ? getState(win) : null; // the first saved window goes here, once
+    for (const w of offer) {
+      const part = unpinnedPart(w);
+      if (!part.tabs.length) continue;
+      if (into && into.tabs && !into.tabs.destroyed) {
+        restoreTabs(into.tabs, part);
+        into = null;
+      } else {
+        createWindow({ saved: part });
+      }
+    }
+  }
+  removeQuiet(profilePath(CRASH_FILE)).then(() => scheduleSessionSave());
+}
+
+// Called by index.js at the end of quit. A clean exit keeps every window when restoreSession is on, and only the
+// pinned tabs when it is off; then the running marker goes. While the crash offer is unanswered, the marker and
+// the crash snapshot stay, so the next start asks again.
+async function markCleanExit() {
+  if (sessionTimer) {
+    clearTimeout(sessionTimer);
+    sessionTimer = null;
+  }
+  if (crashOffer) return;
+  const snap = refreshSnapshot();
+  await writeSnapshot(SESSION_FILE, restoreEnabled() ? snap : pinnedOnly(snap));
+  await removeQuiet(profilePath(MARKER_FILE));
 }
 
 // ── IPC ───────────────────────────────────────────────────────────────────
@@ -582,5 +817,6 @@ Object.assign(module.exports, {
   scheduleSessionSave,
   saveSession,
   restoreOrCreate,
+  markCleanExit,
   registerIpc,
 });

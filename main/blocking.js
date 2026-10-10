@@ -31,6 +31,10 @@
 // Persistence: userData/profile/blocking.json, debounced 5 s, atomic tmp+rename, flush() on before-quit.
 // Incognito: blocks, updates per-tab counts and per-tab domains, but never writes stats or exceptions. An
 // incognito window's shield toggle is kept in memory only (incOverride) and lasts until the app quits.
+//
+// Purify level (2.4): 'strict' (Full) or 'balanced' (no in-page scriptlets, see cosmetics.js). A site listed in
+// settings.purifyBalancedSites is 'balanced'; the rest follow settings.blockingLevel. Incognito level changes stay
+// in memory (incLevel). "Report a broken site" opens a pre-filled GitHub issue with the host, version and level only.
 
 const fs = require('fs');
 const path = require('path');
@@ -395,6 +399,47 @@ function exceptionList(incognito) {
   return [...out].sort();
 }
 
+// ── Per-site level (2.4) ──────────────────────────────────────────────────────
+// Sets a site's level. Normal windows persist it through settings.purifyBalancedSites (the settings onChange
+// rebuilds balancedHosts); incognito keeps it in memory. Returns the effective level afterwards.
+function setSiteLevel(host, lvl, incognito) {
+  const want = lvl === 'balanced' ? 'balanced' : 'strict';
+  if (incognito) {
+    incLevel.set(host, want);
+    return level(host, true);
+  }
+  // The settings sanitizer only keeps dotted hosts, so single-label hosts (localhost) cannot be stored.
+  if (!host.includes('.')) return level(host, false);
+  const list = [...balancedHosts];
+  const has = balancedHosts.has(host);
+  if (want === 'balanced' && !has) {
+    if (list.length >= 500) return level(host, false);
+    list.push(host);
+  } else if (want === 'strict' && has) {
+    list.splice(list.indexOf(host), 1);
+  } else {
+    return level(host, false);
+  }
+  try {
+    const snap = storage.settings.set({ purifyBalancedSites: list });
+    balancedHosts = balancedSetFrom(snap && snap.purifyBalancedSites);
+  } catch (err) {
+    log('[blocking] cannot save site level:', err && err.message);
+  }
+  return level(host, false);
+}
+
+// Normalized Set from settings.purifyBalancedSites. Rebuilt on settings change, never per request.
+function balancedSetFrom(list) {
+  const out = new Set();
+  if (!Array.isArray(list)) return out;
+  for (const raw of list) {
+    const h = normHost(raw);
+    if (h) out.add(h);
+  }
+  return out;
+}
+
 // ── Per-contents records (per-tab counts) ─────────────────────────────────────
 const contentsRecs = new Map(); // webContents id -> record
 
@@ -516,7 +561,9 @@ function topTabDomains(rec) {
 let engine = null; // ElectronBlocker in use for matching; null until the first engine is installed
 let activeKey = null; // filterlists key of the lists `engine` was built from (null: unknown, from an old cache)
 let globalOn = true;
-let levelValue = 'strict';
+let levelValue = 'strict'; // global level (settings.blockingLevel)
+let balancedHosts = new Set(); // 2.4: settings.purifyBalancedSites, normalized, rebuilt on every settings change
+const incLevel = new Map(); // 2.4: incognito only, memory: host -> 'strict' | 'balanced'
 let liteWanted = false;
 let liteSet = false; // setLiteMode() was called explicitly (possibly before init); it wins over the settings at init
 let cookieWanted = false; // settings.blockCookieBanners: annoyance lists follow it like Lite mode does
@@ -731,8 +778,25 @@ function getEngine() {
   return engine;
 }
 
-function level() {
-  return levelValue;
+// Purify level: 'strict' (Full) or 'balanced' (no in-page scriptlets). With a host, a site listed in
+// purifyBalancedSites is 'balanced' (a Set lookup); incognito may override a site in memory only.
+// Without a host it is the global level.
+function level(host, incognito = false) {
+  const h = typeof host === 'string' ? normHost(host) : '';
+  if (!h) return levelValue;
+  if (incognito && incLevel.has(h)) return incLevel.get(h);
+  return balancedHosts.has(h) ? 'balanced' : levelValue;
+}
+
+// Level of the page shown in `wc` (its top-level URL decides, as for the shield).
+function levelFor(wc, url) {
+  let incognito = false;
+  try {
+    incognito = incognitoSessions.has(wc.session);
+  } catch {
+    incognito = false;
+  }
+  return level(hostOfUrl(typeof url === 'string' ? url : currentUrl(wc)), incognito);
 }
 
 // Safe before init(): the flag is recorded and the annoyance lists follow it once the lists are loaded.
@@ -782,9 +846,25 @@ function attach(ses, opts) {
   applySession(ses);
 }
 
-// Listeners and frame preloads per session. Installed only while blocking is on and an engine is loaded.
+// 2.4: HTTPS upgrades (main/privacy.js, E3) share our onBeforeRequest listener — Electron allows only one per
+// session. privacy.js calls refreshHooks() when httpsMode changes. Loaded lazily (privacy requires settings).
+let privacyMod;
+function privacy() {
+  if (privacyMod === undefined) {
+    try { privacyMod = require('./privacy'); } catch { privacyMod = null; }
+  }
+  return privacyMod;
+}
+
+function httpsHookWanted() {
+  const p = privacy();
+  try { return !!(p && p.wantsRequestHook && p.wantsRequestHook()); } catch { return false; }
+}
+
+// Listeners and frame preloads per session. Installed only while blocking is on and an engine is loaded
+// (or while HTTPS upgrades need the request hook).
 function applySession(ses) {
-  const want = globalOn && engine !== null;
+  const want = (globalOn && engine !== null) || httpsHookWanted();
   if (want && !hooked.has(ses)) {
     const incognito = incognitoSessions.has(ses);
     try {
@@ -811,7 +891,7 @@ function applySession(ses) {
     preloadIds.set(ses, regs);
   }
   for (const [p, always] of framePreloads) {
-    const wantPreload = always || want;
+    const wantPreload = always || (globalOn && engine !== null);
     const has = regs.has(p);
     if (wantPreload && !has) {
       try {
@@ -837,6 +917,11 @@ function applySession(ses) {
     }
     regs.delete(p);
   }
+}
+
+// Re-evaluates which sessions need the webRequest hooks (2.4: privacy.js calls this on httpsMode change).
+function refreshHooks() {
+  applyAll();
 }
 
 function applyAll() {
@@ -876,6 +961,13 @@ const LOOP_MAX_URLS = 200; // per page; bounded memory
 
 function handleRequest(incognito, details, callback) {
   let res = null;
+  if (details.resourceType === 'mainFrame') {
+    // 2.4: http → https upgrade first (privacy.upgrade returns the https URL or null).
+    const p = privacy();
+    let up = null;
+    try { up = p && p.upgrade ? p.upgrade(details, incognito) : null; } catch (err) { log('[blocking] https upgrade failed:', err && err.message); }
+    if (up) { callback({ redirectURL: up }); return; }
+  }
   const eng = engine;
   if (eng && globalOn && details.webContentsId !== undefined) {
     try {
@@ -1048,6 +1140,7 @@ function onSettingsChanged(s) {
     applyAll();
   }
   levelValue = s.blockingLevel === 'balanced' ? 'balanced' : 'strict';
+  balancedHosts = balancedSetFrom(s.purifyBalancedSites);
   const lite = s.liteMode === true;
   if (lite !== liteWanted) setLiteMode(lite);
   setCookieBanners(s.blockCookieBanners === true);
@@ -1065,6 +1158,7 @@ function init() {
     const s = storage.settings.get();
     globalOn = s.blockingEnabled !== false;
     levelValue = s.blockingLevel === 'balanced' ? 'balanced' : 'strict';
+    balancedHosts = balancedSetFrom(s.purifyBalancedSites);
     if (!liteSet) liteWanted = s.liteMode === true;
     cookieWanted = s.blockCookieBanners === true;
     storage.settings.onChange(onSettingsChanged);
@@ -1107,6 +1201,19 @@ function isActiveFor(wc, url) {
   return !isExcepted(host, incognito);
 }
 
+// The pre-filled issue for "Report a broken site". Query values only: host, app version and level name.
+const REPORT_BASE = 'https://github.com/Sweet-Shots/Pure/issues/new';
+function reportUrl(host, levelName) {
+  const q = new URLSearchParams({
+    template: 'site-broken.yml',
+    title: `Broken site: ${host}`,
+    site: host,
+    version: app.getVersion(),
+    level: levelName,
+  });
+  return `${REPORT_BASE}?${q.toString()}`;
+}
+
 // ── IPC ───────────────────────────────────────────────────────────────────────
 function windowsModule() {
   return require('./windows');
@@ -1128,9 +1235,41 @@ function registerIpc(ipc) {
       tabId,
       host,
       enabled: globalOn && !(host && isExcepted(host, incognito)),
+      level: level(host, incognito), // 2.4: this site's Purify level ('strict' | 'balanced')
+      globalLevel: levelValue,       // per-site choice only applies on top of the global Full level
       blocked: rec ? rec.blocked : 0,
       domains: rec ? topTabDomains(rec) : [],
     };
+  });
+
+  // 2.4: per-site Purify level. Returns the effective level after the change.
+  ipc.handle('blocking:set-site-level', (event, host, lvl) => {
+    if (!security.isChromeSender(event)) forbidden();
+    const h = normHost(host);
+    if (!h) return levelValue;
+    const win = BrowserWindow.fromWebContents(event.sender);
+    const incognito = windowsModule().isIncognitoWindow(win);
+    return setSiteLevel(h, lvl, incognito);
+  });
+
+  // 2.4: "Report a broken site" — opens a pre-filled GitHub issue in a new tab of the sender's window. Only the
+  // host, the app version and the level are sent; the host comes from the tab's own URL, never from the caller.
+  ipc.on('blocking:report-broken', (event, tabId) => {
+    if (!security.isChromeSender(event)) return;
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (!win || win.isDestroyed() || windowsModule().isIncognitoWindow(win)) return;
+    const manager = windowsModule().getTabManager(win);
+    const tab = manager && Number.isInteger(tabId) ? manager.get(tabId) : null;
+    if (!tab) return;
+    const host = hostOfUrl(tab.url);
+    if (!host) return;
+    const off = !globalOn || isExcepted(host, false);
+    const name = off ? 'Off' : level(host, false) === 'balanced' ? 'Balanced' : 'Full';
+    try {
+      manager.createTab({ url: reportUrl(host, name), active: true, after: tab });
+    } catch (err) {
+      log('[blocking] report tab failed:', err && err.message);
+    }
   });
 
   ipc.handle('blocking:set-site', (event, host, enabled) => {
@@ -1181,6 +1320,10 @@ module.exports = {
   onEngineChanged,
   isActiveFor,
   level,
+  levelFor,
   registerFramePreload,
   buildNow,
+  refreshHooks,
+  exceptionList,
+  setSite,
 };

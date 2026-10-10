@@ -25,6 +25,7 @@ import { initSplit, syncSplitFromTabs } from './split.js';
 import { initGroups, setGroups } from './groups.js';
 import { initReader } from './reader.js';
 import { initExtensions } from './extensions.js';
+import { initToasts } from './toast.js'; // 2.4 — E5
 // 2.2 — C1 (passwords) and C2 (extensions) each add one import + init line here.
 
 function applySettings(next) {
@@ -74,6 +75,7 @@ async function boot() {
   initGroups();
   initReader();
   initExtensions();
+  initToasts(); // 2.4 — E5
   wireMain();
 
   const [info, settings, tabs, bookmarks, downloads, groups] = await Promise.all([

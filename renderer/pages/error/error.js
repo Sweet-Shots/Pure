@@ -78,6 +78,13 @@
       title: 'This page crashed',
       message: 'Something went wrong while displaying this page. Reload to try again.',
     },
+    // 2.4 (HTTPS-only mode): main sends this code itself, so there is no ERR_ prefix and no Chromium code.
+    HTTPS_ONLY: {
+      title: "This site doesn't support a secure connection",
+      message: 'HTTPS-only mode is on, so Pure stopped this page. It only loads over an encrypted connection. Anything sent over an insecure connection can be read or changed by others on the network.',
+      custom: true,
+      kind: 'cert',
+    },
   };
 
   // Chromium numeric net error codes that show up as strings.
@@ -145,7 +152,7 @@
 
   var name = normalizeCode(rawCode);
   var info = lookup(name);
-  var isNetError = !!name && name !== 'CRASHED';
+  var isNetError = !!name && name !== 'CRASHED' && !info.custom;
   var offline = !!info.offline || (typeof navigator !== 'undefined' && navigator.onLine === false);
 
   var codeText = '';
@@ -155,16 +162,33 @@
 
   var autoRetried = false;
 
+  // HTTPS_ONLY page: "Continue" loads the same address over http for this run (main checks the host).
+  function setContinue(show) {
+    var btn = $('error-continue-http');
+    if (!btn) return;
+    btn.hidden = !show;
+    btn.style.display = show ? '' : 'none';
+  }
+
+  function continueHttp() {
+    var api = window.pureInternal || null;
+    if (!api || !api.privacy || typeof api.privacy.allowHttp !== 'function') return;
+    api.privacy.allowHttp(url).catch(function () {
+      // main refused (not this error page, or another host): stay on the error page
+    });
+  }
+
   function render() {
     document.title = hostOf(url) || info.title;
     setText('error-title', info.title);
     setText('error-message', info.message);
     setText('error-code', codeText);
     setText('error-url', url);
+    setContinue(name === 'HTTPS_ONLY' && retryable(url));
     if (document.documentElement) {
       document.documentElement.classList.toggle('offline', offline);
       // Picks the icon in error.css: generic | offline | cert | crashed.
-      var kind = offline ? 'offline' : info === ERRORS.CERT ? 'cert' : name === 'CRASHED' ? 'crashed' : 'generic';
+      var kind = offline ? 'offline' : info.kind ? info.kind : info === ERRORS.CERT ? 'cert' : name === 'CRASHED' ? 'crashed' : 'generic';
       document.documentElement.setAttribute('data-kind', kind);
     }
   }
@@ -191,6 +215,15 @@
       goHome();
     }
   });
+
+  // Bound by id (not data-action) so the click runs exactly once.
+  var continueBtn = $('error-continue-http');
+  if (continueBtn) {
+    continueBtn.addEventListener('click', function (event) {
+      event.preventDefault();
+      continueHttp();
+    });
+  }
 
   // Network-down errors: retry once automatically when the connection comes back.
   window.addEventListener('online', function () {

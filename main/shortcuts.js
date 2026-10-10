@@ -70,6 +70,9 @@ function handle(wc, ctx, input) {
         case 'f': return uiCommand(ctx, 'focus-mode');
         case 's': return uiCommand(ctx, 'split-view');
         case 'm': return uiCommand(ctx, 'mute-others');
+        // 2.4 — screenshot of the visible area; clean link of the active tab's URL (tools.js does the work).
+        case 'x': return screenshot(ctx, 'visible');
+        case 'c': return cleanLink(ctx);
         default: return false;
       }
     }
@@ -201,6 +204,20 @@ function pictureInPicture(ctx, wc) {
   const page = pageOf(ctx, wc);
   if (!page || page.isDestroyed()) return false;
   require('./menus').togglePictureInPicture(page, null);
+  return true;
+}
+
+// Ctrl+Shift+X / Ctrl+Shift+C act on the window's active tab. Lazy require: tools.js is only needed here
+// and on the page context menu.
+function screenshot(ctx, mode) {
+  if (!ctx.tabs || !ctx.tabs.activeId) return false;
+  require('./tools').takeScreenshot(ctx.tabs, ctx.tabs.activeId, mode);
+  return true;
+}
+
+function cleanLink(ctx) {
+  if (!ctx.tabs || !ctx.tabs.activeId) return false;
+  require('./tools').copyCleanLinkForTab(ctx.tabs, ctx.tabs.activeId);
   return true;
 }
 

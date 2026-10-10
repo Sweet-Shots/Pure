@@ -74,6 +74,14 @@ const SETTINGS_DEFAULTS = {
   focusMode: false,
   readerFont: 'serif',          // serif | sans
   readerSize: 19,               // px, 14–28
+  // 2.4 (ships as 2.3.0)
+  httpsMode: 'upgrade',         // off | upgrade (try https, fall back to http silently) | strict (warn before http)
+  clearOnExitHistory: false,    // clear these when Pure closes (main/privacy.js)
+  clearOnExitCookies: false,    // cookies + site storage
+  clearOnExitCache: false,
+  clearOnExitDownloads: false,  // the download list only, never the files
+  purifyBalancedSites: [],      // hosts where Purify runs at the Balanced level (no in-page scriptlets)
+  warnRiskyDownloads: true,     // confirm before keeping script / shortcut files and insecure (http) programs
 };
 
 const WIDGET_IDS = ['news', 'weather', 'reading', 'notes'];
@@ -317,6 +325,22 @@ const VALIDATORS = {
     const n = typeof v === 'string' && /^\d+$/.test(v) ? Number(v) : v;
     return Number.isInteger(n) && n >= 14 && n <= 28 ? n : INVALID;
   },
+  httpsMode: oneOf(['off', 'upgrade', 'strict']),
+  clearOnExitHistory: boolOnly,
+  clearOnExitCookies: boolOnly,
+  clearOnExitCache: boolOnly,
+  clearOnExitDownloads: boolOnly,
+  purifyBalancedSites(v) {
+    if (!Array.isArray(v)) return INVALID;
+    const out = new Set();
+    for (const h of v) {
+      if (typeof h !== 'string') continue;
+      const t = h.trim().toLowerCase();
+      if (t.length <= 253 && /^[a-z0-9.-]+$/.test(t) && t.includes('.')) out.add(t);
+    }
+    return [...out].slice(0, 500);
+  },
+  warnRiskyDownloads: boolOnly,
 };
 
 let settingsState = clone(SETTINGS_DEFAULTS);

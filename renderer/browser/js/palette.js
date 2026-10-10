@@ -3,7 +3,7 @@
 // bookmarks and history come from main (palette:query, debounced 80 ms, stale responses dropped).
 // Keys: ↑/↓ move, Enter runs, Esc closes (keys.js forwards Esc from main), click runs.
 
-import { S, homeUrl } from './state.js';
+import { S, homeUrl, activeTab } from './state.js';
 import { $, el, pure } from './util.js';
 import { acquireFreeze, registerOverlay, claimOverlay } from './freeze.js';
 import { icon } from './icons.js';
@@ -53,7 +53,20 @@ function openSettings(section) {
 const onOff = (v) => (v ? 'On' : 'Off');
 const themeSub = (name) => (S.settings.theme === name ? 'Current' : '');
 
+const isWebUrl = (u) => /^https?:\/\//i.test(String(u || ''));
+// Pages the screenshot tool can capture (web, local file, new-tab page).
+const isCapturable = (u) => isWebUrl(u) || /^file:/i.test(String(u || '')) || /^pure:\/\/home(\/|$)/i.test(String(u || ''));
+const toolTab = () => {
+  const t = activeTab();
+  return t && isCapturable(t.url) ? t : null;
+};
+const webTab = () => {
+  const t = activeTab();
+  return t && isWebUrl(t.url) ? t : null;
+};
+
 // Local actions. title/sub may be functions (state changes while the palette is closed).
+// hidden() = true leaves the action out of the list (it does not apply to the current tab or window).
 const ACTIONS = [
   { title: 'New tab', icon: 'plus', keywords: 'open', run: () => pure.tabs.create({ url: homeUrl() }) },
   { title: 'New window', icon: 'app-window', run: () => pure.newWindow() },
@@ -65,6 +78,19 @@ const ACTIONS = [
   { title: () => (isSplitActive() ? 'Close split view' : 'Split view'), icon: 'columns-2', keywords: 'side by side', run: toggleSplit },
   { title: 'Reader mode', icon: 'book-open', keywords: 'article simplify', run: toggleReader },
   { title: 'Mute other tabs', icon: 'volume-x', keywords: 'silence', run: muteOthers },
+  // 2.4 — tools
+  { title: 'Take screenshot', icon: 'app-window', keywords: 'capture visible area print screen picture', hidden: () => !toolTab(),
+    run: () => { const t = toolTab(); if (t) pure.tools.screenshot(t.id, 'visible').catch(() => {}); } },
+  { title: 'Take full-page screenshot', icon: 'app-window', keywords: 'capture whole page scroll long', hidden: () => !toolTab(),
+    run: () => { const t = toolTab(); if (t) pure.tools.screenshot(t.id, 'full').catch(() => {}); } },
+  { title: 'Copy clean link', icon: 'shield', keywords: 'url tracking utm fbclid strip parameters copy link', hidden: () => !webTab(),
+    run: () => { const t = webTab(); if (t) pure.tools.copyCleanLink(t.url).catch(() => {}); } },
+  { title: () => (activeTab() && activeTab().pinned ? 'Unpin tab' : 'Pin tab'), icon: 'bookmark', keywords: 'pin keep tab',
+    hidden: () => !activeTab(),
+    run: () => { const t = activeTab(); if (t) pure.tabs.pin(t.id, !t.pinned); } },
+  { title: 'Site settings', icon: 'lock', keywords: 'permissions cookies storage sites per site', run: () => openSettings('sites') },
+  { title: 'Report a broken site', icon: 'triangle-alert', keywords: 'bug issue github problem broken', hidden: () => S.incognito || !webTab(),
+    run: () => { const t = webTab(); if (t) pure.blocking.reportBroken(t.id); } },
   { title: 'Clear browsing data', icon: 'trash-2', keywords: 'cookies cache history privacy', run: () => openSettings('privacy') },
   { title: 'Theme: dark', icon: 'moon', sub: () => themeSub('dark'), run: () => pure.settings.set({ theme: 'dark' }) },
   { title: 'Theme: light', icon: 'sun', sub: () => themeSub('light'), run: () => pure.settings.set({ theme: 'light' }) },
@@ -105,6 +131,7 @@ function buildItems() {
   }
   if (!tabsOnly) {
     for (const a of ACTIONS) {
+      if (a.hidden && a.hidden()) continue;
       if (!matches(toks, `${labelOf(a)} ${a.keywords || ''}`)) continue;
       out.push({ kind: 'action', section: 'Actions', title: labelOf(a), sub: a.sub ? a.sub() : '', icon: a.icon, run: a.run });
     }

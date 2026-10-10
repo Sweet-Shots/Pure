@@ -1,12 +1,15 @@
 'use strict';
-// Chrome extensions (C2). Only the persistent profile session (persist:pure) carries extensions. Incognito
-// sessions are ignored here: incognito windows show no toolbar actions and run no extension code.
+// Chrome extensions (C2, E1 for the compatibility layer). Only the persistent profile session (persist:pure) carries
+// extensions. Incognito sessions are ignored here: incognito windows show no toolbar actions and run no extension code.
 //
 // What Electron 44 gives us (session.extensions, see electron.d.ts):
 //  - loadExtension(folder) / removeExtension(id) / getAllExtensions(), and extension-loaded / -unloaded events.
 //  - Loaded extensions are NOT remembered between runs, so every enabled one is loaded again in init().
-//  - No badges, no chrome.action.onClicked. Toolbar actions are read from the manifest (action or
-//    browser_action). An action with a popup opens it in a small window; an action without one does nothing.
+//  - Toolbar actions are read from the manifest (action or browser_action). Their badges, titles, icons and popups
+//    are driven by main/extension-api.js (chrome.action) and shown per window for the window's active tab.
+//
+// The compatibility layer (main/extension-api.js + preload/extension-api.js) is set up lazily: ensureApi() runs right
+// before the first extension is loaded, so users without extensions register nothing.
 //
 // Store installs use electron-chrome-web-store (MIT). Its preload and IPC are registered lazily, the first time
 // the Chrome Web Store is opened (or a store page is navigated to), so users without extensions never run them.
@@ -21,6 +24,7 @@ const path = require('path');
 const { app, BrowserWindow, dialog, screen, session, webContents } = require('electron');
 const { log } = require('./logger');
 const security = require('./security');
+const extApi = require('./extension-api');
 
 // Required lazily: windows.js loads sessions.js, which loads this module during configure().
 const windows = () => require('./windows');
@@ -31,6 +35,7 @@ const STORE_URL = `https://${STORE_HOST}/`;
 const ID_RE = /^[a-p]{32}$/;
 const SAVE_DELAY_MS = 1000;
 const REFRESH_DELAY_MS = 150;
+const ACTION_PUSH_MS = 250; // toolbar updates are coalesced to at most 4 per second
 const UPDATE_FIRST_MS = 5 * 60 * 1000;
 const UPDATE_EVERY_MS = 6 * 60 * 60 * 1000; // never more often than every 6 h
 const POPUP_MIN = { w: 200, h: 100 };
@@ -47,6 +52,40 @@ const ICON_TYPES = {
 // Read in the popup's own page, so no extension code runs for the measurement.
 const MEASURE_JS = '({ w: document.documentElement.scrollWidth, h: document.documentElement.scrollHeight })';
 
+// Manifest permissions with a plain-language label for the settings page.
+const PERMISSION_LABELS = {
+  tabs: 'Tabs',
+  activeTab: 'Current tab',
+  storage: 'Storage',
+  cookies: 'Cookies',
+  notifications: 'Notifications',
+  contextMenus: 'Right-click menu',
+  menus: 'Right-click menu',
+  webNavigation: 'Page navigation',
+  alarms: 'Alarms',
+  scripting: 'Scripts on pages',
+  webRequest: 'Network requests',
+  webRequestBlocking: 'Block network requests',
+  declarativeNetRequest: 'Block network requests',
+  declarativeNetRequestWithHostAccess: 'Block network requests',
+  idle: 'Idle state',
+  unlimitedStorage: 'Unlimited storage',
+  offscreen: 'Offscreen pages',
+  clipboardRead: 'Read the clipboard',
+  clipboardWrite: 'Write to the clipboard',
+  geolocation: 'Location',
+  windows: 'Windows',
+  background: 'Runs in the background',
+};
+// Permissions Pure does not provide at all (the settings page warns about them).
+const UNSUPPORTED_PERMISSIONS = new Set([
+  'bookmarks', 'browsingData', 'commands', 'debugger', 'desktopCapture', 'downloads', 'fontSettings', 'history',
+  'identity', 'nativeMessaging', 'pageCapture', 'power', 'privacy', 'proxy', 'readingList', 'search', 'sessions',
+  'sidePanel', 'tabCapture', 'topSites', 'tts', 'ttsEngine', 'userScripts', 'vpnProvider', 'contentSettings', 'dns',
+  'gcm', 'loginState', 'printerProvider', 'enterprise.deviceAttributes', 'webRequest', 'webRequestBlocking',
+  'webRequestAuthProvider',
+]);
+
 let mainSession = null; // persist:pure, set by attach()
 let storeSupport = null; // installChromeWebStore() promise, created on first use
 let prefsLoad = null; // promise: extensions.json read once
@@ -54,6 +93,7 @@ let readyPromise = null; // promise: prefs loaded + first reconcile done
 let queue = Promise.resolve(); // serialises load / unload / install-state work
 let refreshTimer = null;
 let updateTimer = null;
+let actionTimer = null;
 let lastUpdateAt = 0;
 let watching = false;
 let popup = null; // { id, win, parent, anchor, ready, sized, shown, timer }
@@ -65,8 +105,7 @@ let saveChain = Promise.resolve();
 
 let catalog = []; // [{ id, source:'store'|'unpacked', path, manifest, messages }]
 const errors = new Map(); // id -> message from the last failed load
-let actions = []; // Action[] for the browser UIs (enabled and loaded only)
-let actionMeta = new Map(); // id -> { popup: url|null }
+let defaults = new Map(); // id -> { title, icon, popup } from the manifest, for loaded and enabled extensions
 let extList = []; // Ext[] for the settings page
 
 const iconCache = new Map(); // absolute file -> data URL | null
@@ -147,6 +186,11 @@ function serial(fn) {
   const run = queue.then(fn);
   queue = run.catch((err) => log('[extensions] task failed:', err));
   return run;
+}
+
+// The compatibility layer is registered once, right before the first extension is loaded.
+function ensureApi() {
+  if (mainSession) extApi.ensure(mainSession);
 }
 
 // ── Preferences (debounced, atomic) ────────────────────────────────────────
@@ -344,6 +388,37 @@ function popupUrlFor(id, rel) {
   return u.protocol === 'chrome-extension:' && u.hostname === id ? u.href : null;
 }
 
+// Settings labels for what an extension can access, and warnings for what Pure does not provide.
+function permissionLabels(manifest) {
+  const out = [];
+  const list = Array.isArray(manifest.permissions) ? manifest.permissions : [];
+  const hosts = [];
+  for (const p of list) {
+    if (typeof p !== 'string') continue;
+    if (p === '<all_urls>' || p.includes('://')) hosts.push(p);
+    else if (PERMISSION_LABELS[p]) out.push(PERMISSION_LABELS[p]);
+  }
+  if (Array.isArray(manifest.host_permissions)) for (const h of manifest.host_permissions) if (typeof h === 'string') hosts.push(h);
+  const everywhere = hosts.some((h) => h === '<all_urls>' || /^(\*|https?|http\*):\/\/\*\//.test(h) || h === '*://*/*');
+  if (everywhere) out.push('Read and change data on all sites');
+  else if (hosts.length) {
+    const names = [...new Set(hosts.map((h) => h.replace(/^[^:]+:\/\//, '').split('/')[0]))];
+    out.push(`Access to ${names.slice(0, 3).join(', ')}${names.length > 3 ? ` and ${names.length - 3} more` : ''}`);
+  }
+  return [...new Set(out)].slice(0, 12);
+}
+
+function warningsFor(id, manifest) {
+  const out = [];
+  const list = Array.isArray(manifest.permissions) ? manifest.permissions : [];
+  for (const p of list) {
+    if (typeof p !== 'string' || p.includes('://')) continue;
+    if (UNSUPPORTED_PERMISSIONS.has(p) || p.startsWith('system.')) out.push(`Needs "${p}", which Pure does not support yet.`);
+  }
+  for (const key of extApi.unsupportedCalls(id).slice(0, 3)) out.push(`Calls chrome.${key}, which Pure does not support yet.`);
+  return out.slice(0, 6);
+}
+
 // ── Reconcile: make Electron's loaded set match the enabled set ─────────────
 
 async function reconcileNow() {
@@ -371,6 +446,9 @@ async function reconcileNow() {
       log('[extensions] could not unload', ext.id, err);
     }
   }
+
+  // Only now, with something to load, the compatibility layer is set up.
+  if (catalog.some((e) => !prefs.disabled.has(e.id))) ensureApi();
 
   // Load every enabled one that is not loaded yet.
   for (const entry of catalog) {
@@ -402,11 +480,10 @@ function scheduleRefresh() {
   }, REFRESH_DELAY_MS);
 }
 
-// Recomputes toolbar actions and the settings list, then pushes them to every UI that shows them.
+// Recomputes the manifest defaults and the settings list, then pushes them to every UI that shows them.
 async function rebuild() {
   const ses = mainSession;
-  const nextActions = [];
-  const nextMeta = new Map();
+  const nextDefaults = new Map();
   const nextList = [];
 
   for (const entry of catalog) {
@@ -421,26 +498,56 @@ async function rebuild() {
       icon: await iconFor(entry, manifest.icons, 48),
       source: entry.source,
       error: errors.get(id) || null,
+      permissions: permissionLabels(manifest),
+      warnings: warningsFor(id, manifest),
     });
 
     if (!enabled || !ses || !ses.extensions.getExtension(id)) continue;
     const spec = manifest.action || manifest.browser_action;
     if (!spec || typeof spec !== 'object') continue;
-    const popupUrl = popupUrlFor(id, spec.default_popup);
-    const title = localize(entry, spec.default_title) || localize(entry, manifest.name) || id;
-    const icon = (await iconFor(entry, spec.default_icon, 32)) || (await iconFor(entry, manifest.icons, 32));
-    nextActions.push({ id, name: title, icon, title, badge: '', badgeColor: '', hasPopup: !!popupUrl });
-    nextMeta.set(id, { popup: popupUrl });
+    nextDefaults.set(id, {
+      title: localize(entry, spec.default_title) || localize(entry, manifest.name) || id,
+      icon: (await iconFor(entry, spec.default_icon, 32)) || (await iconFor(entry, manifest.icons, 32)),
+      popup: popupUrlFor(id, spec.default_popup),
+    });
   }
 
-  actions = nextActions;
-  actionMeta = nextMeta;
+  defaults = nextDefaults;
   extList = nextList;
-  if (popup && !nextMeta.has(popup.id)) closePopup();
+  if (popup && !defaults.has(popup.id)) closePopup();
 
   broadcastActions();
   broadcastList();
   ensureUpdateTimer();
+}
+
+// The toolbar for one window: manifest defaults, overridden by chrome.action values for its active tab.
+function actionsFor(win) {
+  const out = [];
+  let tabId = null;
+  try {
+    const mgr = windows().getTabManager(win);
+    tabId = mgr && mgr.activeId ? mgr.activeId : null;
+  } catch {
+    tabId = null;
+  }
+  for (const [id, d] of defaults) {
+    const eff = extApi.effectiveAction(id, tabId);
+    const title = typeof eff.title === 'string' ? eff.title : d.title;
+    const icon = eff.icon || d.icon || null;
+    const popupUrl = eff.popup !== undefined ? eff.popup || null : d.popup;
+    out.push({
+      id,
+      name: title,
+      icon,
+      title,
+      badge: typeof eff.badge === 'string' ? eff.badge : '',
+      badgeColor: typeof eff.badgeColor === 'string' ? eff.badgeColor : '',
+      hasPopup: !!popupUrl,
+      enabled: eff.enabled !== false,
+    });
+  }
+  return out;
 }
 
 function broadcastActions() {
@@ -454,11 +561,20 @@ function broadcastActions() {
     if (win.isDestroyed()) continue;
     const incognito = windows().isIncognitoWindow(win);
     try {
-      win.webContents.send('ext:changed', incognito ? [] : actions);
+      win.webContents.send('ext:changed', incognito ? [] : actionsFor(win));
     } catch {
       /* window closing */
     }
   }
+}
+
+// Called by extension-api.js when a badge, title, icon or popup changes, or the active tab / focus moves.
+function scheduleActionPush() {
+  if (!defaults.size || actionTimer) return;
+  actionTimer = setTimeout(() => {
+    actionTimer = null;
+    broadcastActions();
+  }, ACTION_PUSH_MS);
 }
 
 function broadcastList() {
@@ -505,6 +621,7 @@ async function confirmInstall(details) {
 // Registers the store preload and IPC once. Until this runs, nothing store-related is loaded.
 function ensureStoreSupport() {
   if (storeSupport || !mainSession) return storeSupport;
+  ensureApi(); // installs load extensions, so the compatibility layer must be in place first
   try {
     const store = require('electron-chrome-web-store');
     storeSupport = store
@@ -696,15 +813,14 @@ function openPopup(parentWin, id, popupUrl, rect) {
 // that close briefly so the same click does not reopen it.
 let blurClose = null; // { id, at }
 
-function togglePopup(parentWin, id, rect) {
+function togglePopup(parentWin, id, rect, popupUrl) {
   const wasOpen = popup && popup.id === id;
   const justBlurred = !!blurClose && blurClose.id === id && Date.now() - blurClose.at < 500;
   blurClose = null;
   closePopup();
   if (wasOpen || justBlurred) return;
-  const meta = actionMeta.get(id);
-  if (!meta || !meta.popup || !mainSession || !parentWin || parentWin.isDestroyed()) return;
-  openPopup(parentWin, id, meta.popup, rect);
+  if (!popupUrl || !mainSession || !parentWin || parentWin.isDestroyed()) return;
+  openPopup(parentWin, id, popupUrl, rect);
 }
 
 // ── Adding and removing ───────────────────────────────────────────────────
@@ -725,6 +841,7 @@ async function loadUnpacked(event) {
   return serial(async () => {
     let ext;
     try {
+      ensureApi();
       ext = await mainSession.extensions.loadExtension(dir);
     } catch (err) {
       return { error: `Electron could not load it: ${errorText(err)}` };
@@ -780,6 +897,7 @@ async function flush() {
   }
   if (dirty) await writePrefs();
   await saveChain;
+  await extApi.flush();
 }
 
 // ── IPC ────────────────────────────────────────────────────────────────────
@@ -789,14 +907,24 @@ function registerIpc(ipc) {
   ipc.handle('ext:actions', (event) => {
     const st = windows().senderState(event);
     if (!st || st.incognito) return [];
-    return actions;
+    return actionsFor(st.win);
   });
   ipc.on('ext:click', (event, id, rect) => {
     const st = windows().senderState(event);
     if (!st || st.incognito || !validId(id)) return;
     const r = sanitizeRect(rect);
     if (!r) return;
-    togglePopup(st.win, id, r);
+    const tabId = st.tabs && st.tabs.activeId ? st.tabs.activeId : null;
+    const eff = extApi.effectiveAction(id, tabId);
+    if (eff.enabled === false) return;
+    const d = defaults.get(id);
+    const popupUrl = eff.popup !== undefined ? eff.popup || null : d ? d.popup : null;
+    if (popupUrl) {
+      togglePopup(st.win, id, r, popupUrl);
+      return;
+    }
+    closePopup();
+    if (tabId) extApi.fireActionClicked(id, tabId); // no popup: chrome.action.onClicked, if the extension listens
   });
 
   // Settings page (pure://settings only): management.
@@ -863,4 +991,15 @@ function registerIpc(ipc) {
   });
 }
 
-module.exports = { attach, init, flush, registerIpc };
+// True when `id` is an extension loaded (enabled) on the persistent session. Used by tabs.js to allow
+// chrome-extension:// pages (options pages, OneTab-style tab pages) in normal tabs.
+function isLoadedExtension(id) {
+  if (typeof id !== 'string' || !ID_RE.test(id) || !mainSession) return false;
+  try {
+    return !!mainSession.extensions.getExtension(id);
+  } catch {
+    return false;
+  }
+}
+
+module.exports = { attach, init, flush, registerIpc, scheduleActionPush, isLoadedExtension };

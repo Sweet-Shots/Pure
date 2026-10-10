@@ -180,6 +180,48 @@
   color: var(--danger);
 }
 
+/* ── 2.4 pinned tabs: div.tab.pinned — icon only, first in the strip; title in the native tooltip ── */
+.tab.pinned {
+  flex: 0 0 36px;
+  width: 36px;
+  min-width: 36px;
+  max-width: 36px;
+  justify-content: center;
+  padding: 0;
+}
+
+.tab.pinned .tab-title,
+.tab.pinned .tab-close,
+.tab.pinned .tab-sleeping {
+  display: none;
+}
+
+/* Audio indicator: a small badge on the favicon's corner instead of its own slot */
+.tab.pinned .tab-audio {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--bg-chrome);
+}
+
+.tab.pinned .tab-audio .icon {
+  width: 9px;
+  height: 9px;
+}
+
+.tab.pinned .tab-audio:hover {
+  background: var(--bg-tab);
+}
+
+/* A little air between the last pinned tab and the first normal one */
+.tab.pinned + .tab:not(.pinned),
+.tab.pinned + .tab-group {
+  margin-left: 6px;
+}
+
 /* ── Light theme: the active tab is a white card on the grey strip ── */
 @media (prefers-color-scheme: light) {
   .tab.active {

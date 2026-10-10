@@ -1,4 +1,4 @@
-/* Pure settings › Extensions (pure://settings/#extensions). Owner: C2.
+/* Pure settings › Extensions (pure://settings/#extensions). Owner: E1.
  * Classic IIFE, loaded after settings.js. Fills #ext-list from window.pureInternal.extensions and keeps it current
  * from the ext:list-changed push. Buttons carry data-action (one delegated listener); every lookup is guarded,
  * because the markup belongs to Visuals. All text is set with textContent. */
@@ -44,6 +44,12 @@
     meta.className = 'ext-meta';
     const desc = document.createElement('div');
     desc.className = 'ext-desc';
+    // What the extension can access (labels), and what Pure does not support for it (warnings).
+    const perms = document.createElement('div');
+    perms.className = 'ext-perms';
+    const warn = document.createElement('div');
+    warn.className = 'ext-warn';
+    warn.hidden = true;
 
     const toggle = document.createElement('input');
     toggle.type = 'checkbox';
@@ -55,7 +61,7 @@
     remove.dataset.action = 'remove-extension';
     remove.textContent = 'Remove';
 
-    row.append(icon, name, meta, desc, toggle, remove);
+    row.append(icon, name, meta, desc, perms, warn, toggle, remove);
     return row;
   }
 
@@ -80,6 +86,19 @@
     const descEl = row.querySelector('.ext-desc');
     const desc = typeof ext.description === 'string' ? ext.description.slice(0, 300) : '';
     if (descEl && descEl.textContent !== desc) descEl.textContent = desc;
+    const permsEl = row.querySelector('.ext-perms');
+    const permsText = Array.isArray(ext.permissions)
+      ? ext.permissions.filter((p) => typeof p === 'string').slice(0, 12).join(' · ')
+      : '';
+    if (permsEl && permsEl.textContent !== permsText) permsEl.textContent = permsText;
+    const warnEl = row.querySelector('.ext-warn');
+    const warnText = Array.isArray(ext.warnings)
+      ? ext.warnings.filter((w) => typeof w === 'string').slice(0, 6).join(' ')
+      : '';
+    if (warnEl) {
+      if (warnEl.textContent !== warnText) warnEl.textContent = warnText;
+      warnEl.hidden = !warnText;
+    }
 
     const toggle = row.querySelector('.ext-toggle');
     if (toggle) {

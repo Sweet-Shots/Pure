@@ -41,11 +41,12 @@ html.focus-mode.focus-reveal #focus-reveal {
      row 2  #titlebar-right = slim drag bar  (full width, window controls right)
      row 3  #toolbar                         (full width)
      row 4  #pw-bar                          (full width)
-     row 5  #bookmark-sidebar                (full width)
-     rows 6–8, col 1: tab column (#btn-new-tab on top of #tabs-scroll)
-     row 6  #findbar   (col 2)
-     row 7  #views     (col 2, 1fr)
-     row 8  #statusbar (col 2)                                           */
+     row 5  #toast-host                      (full width, 0 px when empty)
+     row 6  #bookmark-sidebar                (full width)
+     rows 7–9, col 1: tab column (#btn-new-tab on top of #tabs-scroll)
+     row 7  #findbar   (col 2)
+     row 8  #views     (col 2, 1fr)
+     row 9  #statusbar (col 2)                                           */
 html.vertical-tabs {
   --vtabs-w: 220px;
 }
@@ -53,7 +54,7 @@ html.vertical-tabs {
 html.vertical-tabs #shell {
   display: grid;
   grid-template-columns: var(--vtabs-w) minmax(0, 1fr);
-  grid-template-rows: auto auto auto auto auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto auto auto auto auto minmax(0, 1fr) auto;
 }
 
 html.vertical-tabs #focus-reveal     { grid-column: 1 / -1; grid-row: 1; }
@@ -61,10 +62,11 @@ html.vertical-tabs #titlebar         { display: contents; }
 html.vertical-tabs #titlebar-right   { grid-column: 1 / -1; grid-row: 2; }
 html.vertical-tabs #toolbar          { grid-column: 1 / -1; grid-row: 3; }
 html.vertical-tabs #pw-bar           { grid-column: 1 / -1; grid-row: 4; }
-html.vertical-tabs #bookmark-sidebar { grid-column: 1 / -1; grid-row: 5; }
-html.vertical-tabs #findbar          { grid-column: 2; grid-row: 6; }
-html.vertical-tabs #views            { grid-column: 2; grid-row: 7; }
-html.vertical-tabs #statusbar        { grid-column: 2; grid-row: 8; }
+html.vertical-tabs #toast-host       { grid-column: 1 / -1; grid-row: 5; }
+html.vertical-tabs #bookmark-sidebar { grid-column: 1 / -1; grid-row: 6; }
+html.vertical-tabs #findbar          { grid-column: 2; grid-row: 7; }
+html.vertical-tabs #views            { grid-column: 2; grid-row: 8; }
+html.vertical-tabs #statusbar        { grid-column: 2; grid-row: 9; }
 
 /* Slim drag bar holding the window controls */
 html.vertical-tabs #titlebar-right {
@@ -90,7 +92,7 @@ html.incognito.vertical-tabs #titlebar-right {
 html.vertical-tabs #btn-new-tab,
 html.vertical-tabs #tabs-scroll {
   grid-column: 1;
-  grid-row: 6 / -1;
+  grid-row: 7 / -1;
 }
 
 html.vertical-tabs #tabs-scroll {
@@ -139,8 +141,10 @@ html.vertical-tabs #btn-new-tab::after {
   content: 'New tab';
 }
 
+/* Row-wrap instead of a column: normal tabs and group headers are 100 % wide (one per line),
+   pinned tabs are 36 px and share the first lines as an icon grid. */
 html.vertical-tabs #tabs {
-  flex-direction: column;
+  flex-flow: row wrap;
   align-items: stretch;
   gap: 2px;
   min-width: 0;
@@ -153,6 +157,21 @@ html.vertical-tabs .tab {
   max-width: none;
   height: 32px;
   padding: 0 6px 0 10px;
+}
+
+html.vertical-tabs .tab.pinned {
+  flex: 0 0 36px;
+  width: 36px;
+  padding: 0;
+}
+
+html.vertical-tabs .tab.pinned + .tab:not(.pinned),
+html.vertical-tabs .tab.pinned + .tab-group {
+  margin-left: 0;
+}
+
+html.vertical-tabs .tab.pinned + .tab:not(.pinned) {
+  margin-top: 4px;
 }
 
 /* Active marker becomes a left bar */

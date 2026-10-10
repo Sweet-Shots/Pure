@@ -3,7 +3,7 @@
 
 import { $, pure } from './util.js';
 
-const WATCHED = ['titlebar', 'toolbar', 'bookmark-sidebar', 'findbar', 'views', 'statusbar'];
+const WATCHED = ['titlebar', 'toolbar', 'bookmark-sidebar', 'findbar', 'toast-host', 'views', 'statusbar'];
 
 let last = '';
 let queued = false;

@@ -316,23 +316,27 @@
   pointer-events: none;
 }
 
+/* Badge: same pill as #shield-count (bottom-right corner, ring in the toolbar colour).
+   JS may set background-color (setBadgeBackgroundColor) and color (setBadgeTextColor) inline. */
 .ext-badge {
   position: absolute;
-  top: 1px;
-  right: 0;
-  max-width: 26px;
-  min-width: 12px;
-  height: 12px;
+  bottom: 1px;
+  right: -2px;
+  min-width: 13px;
+  max-width: 30px;
+  height: 13px;
   padding: 0 3px;
   overflow: hidden;
-  border-radius: 6px;
+  border-radius: 7px;
   background: var(--accent);
   color: var(--on-accent);
   font-size: 8.5px;
   font-weight: 700;
-  line-height: 12px;
+  line-height: 13px;
+  letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
   text-align: center;
+  text-overflow: clip;
   white-space: nowrap;
   box-shadow: 0 0 0 2px var(--bg-chrome);
   pointer-events: none;
@@ -340,6 +344,22 @@
 
 .ext-badge:empty {
   display: none;
+}
+
+/* Action disabled for this tab (chrome.action.disable) */
+.ext-action.disabled img,
+.ext-action:disabled img {
+  opacity: 0.4;
+  filter: grayscale(1);
+}
+
+.ext-action:disabled {
+  cursor: default;
+}
+
+.ext-action:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
 }
 
 /* ═══ Save-password bar (in flow under the toolbar) ═══ */

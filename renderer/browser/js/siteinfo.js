@@ -178,7 +178,7 @@ export function initSiteInfo() {
   if (allBtn) {
     allBtn.addEventListener('click', () => {
       closePopover();
-      pure.tabs.create({ url: 'pure://settings/#privacy' }).catch(() => {});
+      pure.tabs.create({ url: 'pure://settings/#sites' }).catch(() => {});
     });
   }
 

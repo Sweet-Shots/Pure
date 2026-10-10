@@ -25,11 +25,16 @@ Pure is a minimal, fast Chromium-based browser for Windows. It's built to stay l
   - blocks YouTube video ads
   - an element picker, your own filters, and a filter-list manager
 - **Google sign-in works**, plus saved passwords (encrypted with your Windows account) and secure DNS.
-- **Tabs your way**: groups, split view, vertical tabs, a command palette (Ctrl+K), tab search, and sleeping tabs to save memory.
-- **Reader mode, picture-in-picture, focus mode**, and light and dark themes.
+- **Private by default**: automatic HTTPS upgrades, optional clearing of data when Pure closes, per-site settings, and download safety checks.
+- **Tabs your way**: pinned tabs, groups, split view, vertical tabs, a command palette (Ctrl+K), tab search, sleeping tabs to save memory, and crash recovery.
+- **Reader mode, picture-in-picture, focus mode, screenshots and clean links**, and light and dark themes.
 - **A home page you can customize**: news, weather, notes and Continue reading. Or hide it all.
-- **Chrome Web Store extensions** (most simple extensions work).
+- **Chrome Web Store extensions**: popular ones like Dark Reader, SponsorBlock and Return YouTube Dislike work.
 - **Import** from Chrome, Edge and Brave.
+
+Found a site Purify breaks? Use **Report a broken site** in the shield, or [open an issue](https://github.com/Sweet-Shots/Pure/issues/new/choose).
+
+Pure is [MIT licensed](LICENSE).
 
 See the full **[changelog](CHANGELOG.md)**.
 

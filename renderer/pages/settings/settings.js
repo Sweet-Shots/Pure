@@ -5,7 +5,7 @@
   'use strict';
 
   const api = window.pureInternal || null;
-  const SECTIONS = ['homepage', 'appearance', 'search', 'privacy', 'passwords', 'performance', 'extensions', 'downloads', 'import', 'shortcuts', 'history', 'about'];
+  const SECTIONS = ['homepage', 'appearance', 'search', 'privacy', 'sites', 'passwords', 'performance', 'extensions', 'downloads', 'import', 'shortcuts', 'history', 'about'];
   const HOME_PURE = 'pure://home/';
   const HISTORY_PAGE = 100;
   // Same values as renderer/browser/js/theme.js: incognito accent is always red.
@@ -19,9 +19,10 @@
     appearance: ['accentColor', 'theme', 'showWelcomeAnimation', 'showStatusBar', 'showBookmarksBar',
       'forceDarkWeb', 'verticalTabs', 'focusMode'],
     search: ['searchEngine', 'searchSuggestions'],
-    privacy: ['restoreSession', 'spellcheck', 'blockingEnabled', 'blockingLevel', 'blockCookieBanners', 'dohMode', 'dohProvider', 'dohCustomUrl'],
+    privacy: ['restoreSession', 'spellcheck', 'blockingEnabled', 'blockingLevel', 'blockCookieBanners', 'dohMode', 'dohProvider', 'dohCustomUrl',
+      'httpsMode', 'clearOnExitHistory', 'clearOnExitCookies', 'clearOnExitCache', 'clearOnExitDownloads'],
     performance: ['tabDiscardMinutes', 'smartSleep', 'liteMode'],
-    downloads: ['askWhereToSave', 'downloadDir'],
+    downloads: ['askWhereToSave', 'downloadDir', 'warnRiskyDownloads'],
   };
   const RESET_MESSAGE = {
     homepage: 'Reset homepage settings to defaults? (Home address, location, temperature and time format)',
@@ -60,6 +61,13 @@
     'doh-provider-select': ['dohProvider', 'value'],
     'doh-custom-input': ['dohCustomUrl', 'value'],
     'cookie-banners-toggle': ['blockCookieBanners', 'bool'],
+    // 2.4
+    'https-mode-select': ['httpsMode', 'value'],
+    'clear-on-exit-history-cb': ['clearOnExitHistory', 'bool'],
+    'clear-on-exit-cookies-cb': ['clearOnExitCookies', 'bool'],
+    'clear-on-exit-cache-cb': ['clearOnExitCache', 'bool'],
+    'clear-on-exit-downloads-cb': ['clearOnExitDownloads', 'bool'],
+    'risky-downloads-toggle': ['warnRiskyDownloads', 'bool'],
     'blocking-level-select': ['blockingLevel', 'value'],
     'force-dark-toggle': ['forceDarkWeb', 'bool'],
     'vertical-tabs-toggle': ['verticalTabs', 'bool'],

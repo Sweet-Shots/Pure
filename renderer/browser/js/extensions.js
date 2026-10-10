@@ -1,4 +1,4 @@
-// Extension toolbar (#ext-actions). Owner: C2.
+// Extension toolbar (#ext-actions). Owner: E1.
 // Main pushes the Action list (ext:changed); this module keeps one button per extension, updated in place.
 // Clicking a button sends its id and rectangle; main opens the extension popup under it.
 
@@ -53,6 +53,10 @@ function updateButton(btn, action) {
   if (badge.style.backgroundColor !== badgeColor) badge.style.backgroundColor = badgeColor;
 
   btn.classList.toggle('no-popup', !action.hasPopup);
+  // chrome.action.disable() greys the button out; a disabled button does nothing when clicked.
+  const enabled = action.enabled !== false;
+  btn.classList.toggle('disabled', !enabled);
+  if (btn.disabled !== !enabled) btn.disabled = !enabled;
 }
 
 function render(actions) {
@@ -83,7 +87,7 @@ function onClick(event) {
   const btn = event.target instanceof Element ? event.target.closest('.ext-action') : null;
   if (!btn || !container.contains(btn)) return;
   const id = btn.dataset.extId;
-  if (!id) return;
+  if (!id || btn.disabled) return;
   const r = btn.getBoundingClientRect();
   // A plain object: DOMRect cannot cross the context bridge.
   pure.extensions.click(id, { x: r.left, y: r.top, width: r.width, height: r.height });

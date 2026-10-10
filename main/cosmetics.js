@@ -119,10 +119,12 @@ function currentEngine() {
   }
 }
 
-function isStrict() {
+// Scriptlets only run at the Full level. The level belongs to the top-level page (its host, or the incognito
+// memory), so a frame is judged by the page it sits in, not by its own origin.
+function isStrictFor(event, ctx) {
   const b = blockingApi();
   try {
-    return !!b && typeof b.level === 'function' && b.level() === 'strict';
+    return !!b && typeof b.levelFor === 'function' && b.levelFor(event.sender, ctx.top) === 'strict';
   } catch {
     return false;
   }
@@ -287,13 +289,11 @@ function registerIpc(ipc) {
     // default assigned first would be what the page receives (that bug delivered '' to every page).
     let code = '';
     try {
-      if (isStrict()) {
-        const ctx = allowedFrame(event);
-        const engine = ctx ? currentEngine() : null;
-        if (engine) {
-          const e = entryFor(engine, ctx);
-          if (e.active) code = e.scripts;
-        }
+      const ctx = allowedFrame(event);
+      const engine = ctx && isStrictFor(event, ctx) ? currentEngine() : null;
+      if (engine) {
+        const e = entryFor(engine, ctx);
+        if (e.active) code = e.scripts;
       }
     } catch (err) {
       log('[cosmetics] scriptlet lookup failed:', err && err.message);

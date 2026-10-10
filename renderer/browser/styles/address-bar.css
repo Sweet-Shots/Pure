@@ -275,7 +275,7 @@
   z-index: 110;
   display: none;
   flex-direction: column;
-  width: 280px;
+  width: 316px;
   background: var(--bg-raised);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -482,6 +482,11 @@
   text-decoration: underline;
 }
 
+/* Incognito: no link to the all-time stats, which come from the normal profile. */
+html.incognito .shield-foot {
+  display: none;
+}
+
 /* 2.3: picker / zap row — .shield-tools › button.pop-btn.shield-tool#shield-pick / #shield-zap */
 .shield-tools {
   display: grid;
@@ -508,4 +513,107 @@
 .shield-tool:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
+}
+
+/* 2.4: per-site level — #shield-level.shield-level-row › .shield-level-label + .shield-seg ›
+   button.shield-seg-btn[data-level="strict"|"balanced"] (+ .selected). Hidden while Purify is off here. */
+.shield-level-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+#shield-popover:has(#shield-toggle:not(:checked)) .shield-level-row {
+  display: none;
+}
+
+.shield-level-label {
+  font-size: 12.5px;
+  color: var(--text);
+}
+
+.shield-seg {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-input);
+}
+
+.shield-seg-btn {
+  height: 22px;
+  min-width: 60px;
+  padding: 0 10px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.1s, color 0.1s;
+}
+
+.shield-seg-btn:hover:not(.selected) {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.shield-seg-btn.selected {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent-text);
+  font-weight: 600;
+  cursor: default;
+}
+
+.shield-seg-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 0;
+}
+
+/* 2.4: footer row — stats link left, #shield-report right */
+.shield-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.shield-report {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  margin-right: -4px;
+  padding: 2px 4px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.1s, background-color 0.1s;
+}
+
+.shield-report .icon {
+  width: 13px;
+  height: 13px;
+  stroke-width: 2;
+}
+
+.shield-report:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+/* Reports never come from incognito (main refuses too) */
+html.incognito #shield-report {
+  display: none;
 }

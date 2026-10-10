@@ -1,7 +1,8 @@
 {
   "name": "pure-browser",
-  "version": "2.2.1",
+  "version": "2.3.0",
   "description": "A minimal Chromium browser — no bloat, just browsing.",
+  "license": "MIT",
   "author": "Pure Browser",
   "main": "main/index.js",
   "private": true,

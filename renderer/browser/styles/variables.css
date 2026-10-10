@@ -30,6 +30,7 @@
   /* Status colours */
   --danger:      #e05c5c;
   --success:     #5cb85c;
+  --warning:     #e0a23c;   /* risky-download toasts */
 
   /* Radii */
   --radius-sm:   4px;
@@ -86,6 +87,7 @@ html.incognito {
 
     --danger:      #c93b3b;
     --success:     #2c8a3e;
+    --warning:     #a8650a;
 
     --accent-text:   color-mix(in srgb, var(--accent) 68%, #000);
     --shadow-pop:    0 8px 24px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);

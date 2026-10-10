@@ -271,6 +271,18 @@ function pageItems(p, actions, webContents) {
   ];
 }
 
+// 2.4: other modules add page context-menu items. mod.contextMenuItems(params, webContents) -> MenuItem templates.
+function hookItems(name, p, webContents) {
+  try {
+    const mod = require(`./${name}`);
+    const items = mod && typeof mod.contextMenuItems === 'function' ? mod.contextMenuItems(p, webContents) : [];
+    return Array.isArray(items) ? items : [];
+  } catch (err) {
+    if (!err || err.code !== 'MODULE_NOT_FOUND') require('./logger').log(`[menus] ${name} items failed:`, err && err.message);
+    return [];
+  }
+}
+
 // params: Electron's ContextMenuParams for the page (x/y are relative to the page view).
 function showPageContextMenu({ win, webContents, params, actions = {} }) {
   if (!webContents || webContents.isDestroyed()) return;
@@ -295,6 +307,8 @@ function showPageContextMenu({ win, webContents, params, actions = {} }) {
   const groups = [
     ...(contextual.length ? contextual : [pageNavItems(webContents), pageItems(p, acts, webContents)]),
     blockElementItems(p, webContents),
+    hookItems('tools', p, webContents),         // 2.4 (manager hook): screenshot, copy clean link — main/tools.js
+    hookItems('extension-api', p, webContents), // 2.4 (manager hook): chrome.contextMenus items — main/extension-api.js
   ].filter((g) => g.length);
 
   const template = [];
@@ -336,25 +350,30 @@ function colorName(color) {
 }
 
 // "Add tab to group" submenu: this window's groups, by title (or colour name when untitled).
+// Pinned tabs can't join a group, so the whole submenu is disabled for them.
 function groupPicker(tab, groups, actions) {
   const list = Array.isArray(groups) ? groups : [];
+  const pinned = !!(tab && tab.pinned);
   const children = list.map((g) => {
     const name = g.title ? `${g.title} (${colorName(g.color)})` : colorName(g.color);
     return item(name, () => safeCall(actions && actions.addToGroup, g.id), {
-      enabled: !(tab && tab.groupId === g.id),
+      enabled: !pinned && !(tab && tab.groupId === g.id),
     });
   });
   if (!children.length) children.push(item('No groups yet', () => {}, { enabled: false }));
-  return { label: esc('Add tab to group'), submenu: children };
+  return { label: esc('Add tab to group'), submenu: children, enabled: !pinned };
 }
 
-// tab: TabState (with groupId and split); actions: newTab, reload, duplicate, toggleMute, close,
-// closeOthers, closeToRight, reopenClosed, newGroup, addToGroup(groupId), removeFromGroup, openSplit,
+// tab: TabState (with groupId, pinned and split); actions: togglePin, newTab, reload, duplicate, toggleMute,
+// close, closeOthers, closeToRight, reopenClosed, newGroup, addToGroup(groupId), removeFromGroup, openSplit,
 // closeSplit, muteOthers (see ARCHITECTURE.md). groups: this window's Group[]; splitOn: a split exists.
 function showTabContextMenu({ win, tab, actions = {}, groups = [], splitOn = false }) {
   const owner = win && !win.isDestroyed() ? win : BrowserWindow.getFocusedWindow();
   const grouped = !!(tab && tab.groupId);
+  const pinned = !!(tab && tab.pinned);
   const template = [
+    item(pinned ? 'Unpin tab' : 'Pin tab', safeAction(actions, 'togglePin')),
+    SEP,
     item('New tab', safeAction(actions, 'newTab'), { accelerator: 'Ctrl+T' }),
     item('Reload', safeAction(actions, 'reload'), { accelerator: 'Ctrl+R' }),
     item('Duplicate', safeAction(actions, 'duplicate')),
@@ -366,13 +385,13 @@ function showTabContextMenu({ win, tab, actions = {}, groups = [], splitOn = fal
     SEP,
     item('Reopen closed tab', safeAction(actions, 'reopenClosed'), { accelerator: 'Ctrl+Shift+T' }),
     SEP,
-    item('Add tab to new group', safeAction(actions, 'newGroup')),
+    item('Add tab to new group', safeAction(actions, 'newGroup'), { enabled: !pinned }),
     groupPicker(tab, groups, actions),
     ...(grouped ? [item('Remove from group', safeAction(actions, 'removeFromGroup'))] : []),
     SEP,
     splitOn
       ? item('Close split view', safeAction(actions, 'closeSplit'))
-      : item('Open in split view', safeAction(actions, 'openSplit')),
+      : item('Open in split view', safeAction(actions, 'openSplit'), { enabled: !pinned }),
     item('Mute other tabs', safeAction(actions, 'muteOthers')),
   ];
   popupAt(owner, template, null);

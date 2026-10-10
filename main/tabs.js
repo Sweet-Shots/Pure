@@ -22,7 +22,11 @@ const CLOSED_LIMIT = 25;
 const FLUSH_MS = 50;
 const SWEEP_MS = 60 * 1000;
 const FAVICON_MAX = 100000;
-const SETTINGS_SECTIONS = new Set(['homepage', 'appearance', 'search', 'privacy', 'downloads', 'shortcuts', 'history', 'about']);
+const SETTINGS_SECTIONS = new Set([
+  'homepage', 'appearance', 'search', 'privacy', 'downloads', 'shortcuts', 'history', 'about',
+  // 2.2 / 2.3 / 2.4 sections
+  'sites', 'passwords', 'performance', 'extensions', 'import',
+]);
 // 2.1 smart sleep / Lite mode
 const LITE_DELAY_MIN = 3;            // Lite mode discard delay, replaces tabDiscardMinutes
 const LOW_MEMORY_ON = 0.15;          // free RAM fraction that starts an emergency sleep pass
@@ -40,6 +44,10 @@ const SPLIT_DEFAULT = 0.5;
 let nextTabId = 1;
 let nextGroupSeq = 1;
 const managers = new Set();
+// 2.4 (manager hook, keep): every 'tabs:*' UI event is also emitted here as (manager, ...args), so main modules
+// (main/extension-api.js: chrome.tabs events) can follow tabs without polling.
+const tabEvents = new (require('events').EventEmitter)();
+tabEvents.setMaxListeners(20);
 let sweepTimer = null;
 let externalDialogOpen = false;
 let onBattery = false;               // kept current by powerMonitor events (no polling)
@@ -88,11 +96,35 @@ function homepageUrl() {
 
 // Web-triggered URLs (popups, context menu, redirects) may only be http(s) or internal pure://.
 // User-triggered URLs (address bar, UI IPC) may use any navigation scheme the security module allows.
+// 2.4: main/privacy.js (E3) decides what happens when an upgraded https load fails.
+// -> { load: httpUrl } | { error: code, desc } | null
+function httpsFallback(m, tab, errorCode, url) {
+  try {
+    const privacy = require('./privacy');
+    if (!privacy || typeof privacy.onMainFrameFail !== 'function') return null;
+    return privacy.onMainFrameFail({ webContents: tab.view.webContents, url, errorCode, incognito: !!m.incognito });
+  } catch {
+    return null;
+  }
+}
+
 function safeUrl(raw, user) {
   if (typeof raw !== 'string' || raw.length === 0 || raw.length > 4096) return null;
   if (!security.isSafeNavigationUrl(raw)) return null;
   if (user) return raw;
   return isHttpUrl(raw) || raw.startsWith('pure://') || raw === 'about:blank' ? raw : null;
+}
+
+// A chrome-extension:// page of a loaded extension, allowed in normal (never incognito) tabs. -> url | null
+function extensionPageUrl(raw, incognito) {
+  if (incognito || typeof raw !== 'string' || raw.length > 4096 || !raw.startsWith('chrome-extension://')) return null;
+  const u = security.parseUrl(raw);
+  if (!u || u.protocol !== 'chrome-extension:') return null;
+  try {
+    return require('./extensions').isLoadedExtension(u.hostname) ? u.href : null;
+  } catch {
+    return null;
+  }
 }
 
 function searchUrl(text) {
@@ -103,7 +135,7 @@ function searchUrl(text) {
 
 function computeSecurity(url) {
   if (!url) return 'internal';
-  if (url.startsWith('pure://')) return 'internal';
+  if (url.startsWith('pure://') || url.startsWith('chrome-extension://')) return 'internal';
   const u = security.parseUrl(url);
   if (!u) return 'insecure';
   if (u.protocol === 'https:') return 'secure';
@@ -138,6 +170,11 @@ function navPolicy(current, target, mainFrame) {
     case 'blob:':
     case 'data:':
       return mainFrame ? 'block' : 'allow';
+    case 'chrome-extension:':
+      // Only within the same extension (its own pages linking to each other); Chromium also enforces
+      // web_accessible_resources for subframes of web pages.
+      if (!mainFrame) return 'allow';
+      return typeof current === 'string' && current.startsWith(`chrome-extension://${u.hostname}/`) ? 'allow' : 'block';
     default:
       if (security.isSafeExternalUrl(target)) return mainFrame ? 'external' : 'block';
       return 'block';
@@ -341,6 +378,7 @@ function makeTab(opts) {
     canGoBack: false,
     canGoForward: false,
     groupId: null,      // id of the tab's group in its window (groups are contiguous in the strip)
+    pinned: !!opts.pinned, // 2.4: pinned tabs sit first in the strip, icon-only, never in a group or split
     popups: 0,
     liteEmu: false,     // this tab holds our debugger session for reduced-motion emulation (Lite mode)
     dbgWc: null,        // webContents the detach listener was attached to
@@ -415,11 +453,12 @@ class TabManager {
       crashed: tab.crashed,
       active: tab.id === this.activeId,
       groupId: tab.groupId || null,
+      pinned: !!tab.pinned,
       split: this.splitSide(tab),
     };
   }
 
-  // Session snapshot: { tabs: [{url, title, group?}], activeIndex, groups: [{title, color, collapsed}],
+  // Session snapshot: { tabs: [{url, title, group?, pinned?}], activeIndex, groups: [{title, color, collapsed}],
   // split?: {left, right, ratio} }. `group` and `split` are indexes into the same snapshot (tab ids change
   // on restore), so they stay valid after windows.js filters unrestorable tabs.
   sessionSnapshot() {
@@ -430,6 +469,7 @@ class TabManager {
     });
     const tabs = this.tabs.map((t) => {
       const entry = { url: t.url, title: t.title || '' };
+      if (t.pinned) entry.pinned = true;
       if (groupIndex.has(t.groupId)) entry.group = groupIndex.get(t.groupId);
       return entry;
     });
@@ -449,6 +489,9 @@ class TabManager {
     const wc = this.win.webContents;
     if (wc.isDestroyed()) return;
     wc.send(channel, ...args);
+    if (channel.startsWith('tabs:') && tabEvents.listenerCount(channel)) {
+      try { tabEvents.emit(channel, this, ...args); } catch (err) { logger.log('[tabs] event listener failed:', err && err.message); }
+    }
   }
 
   // Coalesces tab:updated events per tab: the flush sends the current values of the changed fields.
@@ -486,7 +529,7 @@ class TabManager {
 
   createTab(opts = {}) {
     if (this.destroyed) return null;
-    const url = safeUrl(opts.url, !!opts.user) || homepageUrl();
+    const url = extensionPageUrl(opts.url, this.incognito) || safeUrl(opts.url, !!opts.user) || homepageUrl();
     const active = opts.active !== false;
     if (isSettingsUrl(url) && this.tabs.some((t) => isSettingsUrl(t.url))) {
       return this.openSettings(settingsSection(url), active);
@@ -498,13 +541,13 @@ class TabManager {
     const tab = makeTab(opts);
     tab.owner = this;
     refreshNavFlags(tab);
-    let idx = this.tabs.length;
+    let idx = tab.pinned ? this.pinnedCount() : this.tabs.length;
     if (Number.isInteger(opts.index)) idx = clamp(opts.index, 0, this.tabs.length);
     else if (opts.after) {
       const a = this.indexOf(opts.after);
       if (a >= 0) idx = a + 1;
     }
-    this.tabs.splice(this.settleIndex(idx), 0, tab);
+    this.tabs.splice(this.settleIndex(idx, tab.pinned), 0, tab);
     this.send('tabs:created', this.stateOf(tab));
     this.scheduleSave();
     if (opts.active !== false) this.activate(tab.id, { focus: !!opts.focus });
@@ -721,6 +764,10 @@ class TabManager {
     on('did-fail-load', (m, _e, errorCode, errorDescription, validatedURL, isMainFrame) => {
       if (!isMainFrame || errorCode === -3) return; // -3 = ERR_ABORTED (user stopped or replaced the load)
       if (typeof validatedURL !== 'string' || !validatedURL || validatedURL.startsWith('pure://')) return;
+      // 2.4 (manager hook, keep): an upgraded https load that failed falls back to http, or shows the HTTPS-only page.
+      const alt = httpsFallback(m, tab, errorCode, validatedURL);
+      if (alt && alt.load) { tab.view.webContents.loadURL(alt.load).catch(() => { /* ignore */ }); return; }
+      if (alt && alt.error) { m.showError(tab, alt.error, alt.desc || '', validatedURL); return; }
       m.showError(tab, errorDescription || 'ERR_FAILED', `Chromium error ${errorCode}`, validatedURL);
     });
     on('certificate-error', (m, _e, url, _error, _cert, callback, isMainFrame) => {
@@ -835,7 +882,7 @@ class TabManager {
   navigate(id, raw) {
     const tab = this.get(id);
     if (!tab || this.destroyed) return;
-    const url = safeUrl(raw, true);
+    const url = extensionPageUrl(raw, this.incognito) || safeUrl(raw, true);
     if (!url) return;
     tab.showingError = false;
     tab.crashed = false;
@@ -995,11 +1042,12 @@ class TabManager {
     this.scheduleSave();
   }
 
+  // Pinned tabs are never closed by these bulk actions (Chrome does the same).
   closeOthers(keepId) {
     if (!this.get(keepId)) return;
     if (this.activeId !== keepId) this.activate(keepId, { focus: false });
     for (const t of [...this.tabs]) {
-      if (t.id !== keepId) this.closeTab(t.id);
+      if (t.id !== keepId && !t.pinned) this.closeTab(t.id);
     }
   }
 
@@ -1007,9 +1055,9 @@ class TabManager {
     const tab = this.get(id);
     if (!tab) return;
     const idx = this.indexOf(tab);
-    const right = this.tabs.slice(idx + 1);
+    const right = this.tabs.slice(idx + 1).filter((t) => !t.pinned);
     if (!right.length) return;
-    if (this.indexOf(this.activeTab()) > idx) this.activate(tab.id, { focus: false });
+    if (right.includes(this.activeTab())) this.activate(tab.id, { focus: false });
     for (const t of right) this.closeTab(t.id);
   }
 
@@ -1028,16 +1076,21 @@ class TabManager {
 
   // Moves a tab to toIndex. It joins the group it lands inside (a group's neighbours on both sides) and
   // leaves the group it is dragged out of; groups stay contiguous by construction.
+  // 2.4: a pinned tab stays inside the pinned run and an unpinned tab stays after it.
   move(id, toIndex) {
-    const from = this.indexOf(this.get(id));
+    const tab = this.get(id);
+    const from = this.indexOf(tab);
     if (from < 0 || !Number.isInteger(toIndex)) return;
-    const to = clamp(toIndex, 0, this.tabs.length - 1);
+    const P = this.pinnedCount();
+    const lo = tab.pinned ? 0 : P;
+    const hi = tab.pinned ? P - 1 : this.tabs.length - 1;
+    const to = clamp(toIndex, lo, Math.max(lo, hi));
     if (to === from) return;
     const [t] = this.tabs.splice(from, 1);
     this.tabs.splice(to, 0, t);
     const prev = this.tabs[to - 1];
     const next = this.tabs[to + 1];
-    const joined = prev && next && prev.groupId && prev.groupId === next.groupId ? prev.groupId : null;
+    const joined = !t.pinned && prev && next && prev.groupId && prev.groupId === next.groupId ? prev.groupId : null;
     const membershipChanged = joined !== t.groupId;
     this.setGroupOf(t, joined);
     const expanded = joined ? this.expandGroup(joined) : false;
@@ -1045,6 +1098,31 @@ class TabManager {
     this.send('tabs:moved', this.tabs.map((x) => x.id));
     if (membershipChanged || expanded || pruned) this.emitGroups();
     this.scheduleSave();
+  }
+
+  // 2.4: pins or unpins a tab. Pinning takes it out of its group and ends a split it is in, then puts it at
+  // the end of the pinned run. Unpinning puts it at the start of the unpinned run. -> true when it changed.
+  setPinned(id, on) {
+    const tab = this.get(id);
+    if (this.destroyed || !tab) return false;
+    const want = !!on;
+    if (tab.pinned === want) return false;
+    const before = this.orderKey();
+    if (want) {
+      if (this.isSplitMember(tab)) this.endSplit();
+      if (tab.groupId) this.groupRemoveTab(tab.id);
+    }
+    const from = this.indexOf(tab);
+    this.tabs.splice(from, 1);
+    tab.pinned = want;
+    // Pinned tabs of the remaining strip = the slot where the tab goes, for both directions.
+    this.tabs.splice(this.pinnedCount(), 0, tab);
+    this.markUpdated(tab, 'pinned');
+    const pruned = this.pruneGroups();
+    if (this.orderKey() !== before) this.send('tabs:moved', this.tabs.map((x) => x.id));
+    if (pruned) this.emitGroups();
+    this.scheduleSave();
+    return true;
   }
 
   // Removes a tab from this window without destroying its view (used when moving to another window).
@@ -1076,8 +1154,9 @@ class TabManager {
     tab.owner = this;
     tab.lastActiveAt = Date.now();
     tab.groupId = null;
-    const idx = Number.isInteger(opts.index) ? clamp(opts.index, 0, this.tabs.length) : this.tabs.length;
-    this.tabs.splice(this.settleIndex(idx), 0, tab);
+    const fallback = tab.pinned ? this.pinnedCount() : this.tabs.length;
+    const idx = Number.isInteger(opts.index) ? clamp(opts.index, 0, this.tabs.length) : fallback;
+    this.tabs.splice(this.settleIndex(idx, tab.pinned), 0, tab);
     this.send('tabs:created', this.stateOf(tab));
     this.scheduleSave();
     if (opts.active !== false) this.activate(tab.id, { focus: !!opts.focus });
@@ -1141,10 +1220,20 @@ class TabManager {
     return this.tabs.map((t) => t.id).join(',');
   }
 
-  // Insertion index for an ungrouped tab: never between two members of the same group.
-  settleIndex(idx) {
-    let i = clamp(idx, 0, this.tabs.length);
-    while (i > 0 && i < this.tabs.length && this.tabs[i - 1].groupId && this.tabs[i - 1].groupId === this.tabs[i].groupId) i++;
+  // Number of pinned tabs. Pinned tabs always form the first run of the strip.
+  pinnedCount() {
+    let n = 0;
+    while (n < this.tabs.length && this.tabs[n].pinned) n++;
+    return n;
+  }
+
+  // Insertion index. Pinned tabs go inside the pinned run [0, pinnedCount]; other tabs go after it, and
+  // never between two members of the same group.
+  settleIndex(idx, pinned = false) {
+    const P = this.pinnedCount();
+    if (pinned) return clamp(idx, 0, P);
+    let i = clamp(idx, P, this.tabs.length);
+    while (i > P && i < this.tabs.length && this.tabs[i - 1].groupId && this.tabs[i - 1].groupId === this.tabs[i].groupId) i++;
     return i;
   }
 
@@ -1210,7 +1299,7 @@ class TabManager {
   // Groups the given tabs (in strip order) as one contiguous block at the first one's position.
   groupCreate(tabIds, opts = {}) {
     if (this.destroyed || !Array.isArray(tabIds)) return null;
-    const picked = new Set(tabIds.map((id) => this.get(id)).filter(Boolean));
+    const picked = new Set(tabIds.map((id) => this.get(id)).filter((t) => t && !t.pinned));
     if (!picked.size) return null;
     const before = this.orderKey();
     const members = this.tabs.filter((t) => picked.has(t));
@@ -1236,7 +1325,7 @@ class TabManager {
   groupAddTab(tabId, groupId) {
     const tab = this.get(tabId);
     const g = this.groupById(groupId);
-    if (this.destroyed || !tab || !g) return false;
+    if (this.destroyed || !tab || !g || tab.pinned) return false;
     const before = this.orderKey();
     const from = this.indexOf(tab);
     this.tabs.splice(from, 1);
@@ -1383,7 +1472,8 @@ class TabManager {
   splitOpen(tabId, otherId) {
     if (this.destroyed) return false;
     const left = this.get(tabId);
-    if (!left) return false;
+    if (!left || left.pinned) return false; // pinned tabs are never a split pane
+    if (otherId !== null && otherId !== undefined && this.get(otherId) && this.get(otherId).pinned) return false;
     const right = otherId === null || otherId === undefined
       ? this.insertTab({ url: homepageUrl(), active: false })
       : this.get(otherId);
@@ -1411,9 +1501,9 @@ class TabManager {
   // the other pane is a new home tab.
   splitFromMenu(id) {
     const tab = this.get(id);
-    if (!tab) return false;
+    if (!tab || tab.pinned) return false;
     const active = this.activeTab();
-    if (!active || active.id === tab.id) return this.splitOpen(tab.id, null);
+    if (!active || active.id === tab.id || active.pinned) return this.splitOpen(tab.id, null);
     return this.splitOpen(active.id, tab.id);
   }
 
@@ -1507,6 +1597,7 @@ class TabManager {
     const tab = this.get(id);
     if (!tab) return;
     const actions = {
+      togglePin: () => this.setPinned(tab.id, !tab.pinned),
       newTab: () => this.createTab({ active: true }),
       reload: () => this.reload(tab.id),
       duplicate: () => {
@@ -1881,6 +1972,11 @@ function registerIpc(ipcMain) {
     const m = senderManager(event);
     if (m && isId(id)) m.muteOthers(id);
   });
+  // 2.4 pinned tabs: pure.tabs.pin(id, pinned)
+  ipcMain.on('tabs:pin', (event, id, pinned) => {
+    const m = senderManager(event);
+    if (m && isId(id) && typeof pinned === 'boolean') m.setPinned(id, pinned);
+  });
 
   // ── 2.2 groups ──
   ipcMain.handle('groups:list', (event) => {
@@ -1942,4 +2038,5 @@ Object.assign(module.exports, {
   allTabs,
   discardTab,
   SPLIT_GAP,
+  tabEvents,
 });

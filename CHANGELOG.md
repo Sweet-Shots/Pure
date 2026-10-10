@@ -1,5 +1,52 @@
 # Pure Browser — Changelog
 
+## 2.3.0
+
+### Extensions
+- **Many more Chrome extensions work.** Pure now provides the Chrome extension features Electron leaves out:
+  - toolbar badges, icon changes and clicks on toolbar buttons
+  - right-click menu items from extensions
+  - notifications
+  - tab and window control (open, switch, close, pin, duplicate, and the matching events)
+  - cookies, alarms, sync storage, permissions and navigation events
+- **Tested with real extensions**: Dark Reader, SponsorBlock and Return YouTube Dislike work. Bitwarden's popup and OneTab's toolbar button work.
+- **Extension pages can open in tabs** (options pages, tab managers).
+- **Settings › Extensions** shows what each extension can access, and warns when one uses a feature Pure doesn't support yet.
+
+### Tabs
+- **Pinned tabs**: right-click a tab › Pin tab. Pinned tabs are icon-only, stay at the start of the strip and always reopen when Pure starts.
+- **Crash recovery**: if Pure didn't close properly, it offers to restore your tabs.
+
+### Privacy & security
+- **HTTPS upgrades** (on by default): Pure tries the secure version of a site first and falls back silently when a site has none. **HTTPS-only** mode warns before every insecure site instead.
+- **Clear data when Pure closes**: choose history, cookies, cache and/or the download list (Settings › Privacy).
+- **Site settings**: every site with its own permissions or Purify settings in one place, with search and reset.
+- **Safer downloads**:
+  - downloaded files carry Windows' "from the internet" mark, so SmartScreen checks them when opened
+  - Pure asks before keeping script and shortcut files, and programs downloaded over insecure connections
+  - "Open when done" for downloads in progress
+
+### Purify
+- **Per-site level**: switch a site between Full and Balanced from the shield.
+- **Report a broken site**: one click in the shield opens a pre-filled GitHub issue. Only the site name, Pure version and level are included, and you review and submit it yourself.
+
+### Tools
+- **Screenshots (Ctrl+Shift+X)**: the visible area or the full page, saved to Pictures › Pure Screenshots and copied to the clipboard. Also in the right-click menu and the command palette.
+- **Copy clean link (Ctrl+Shift+C)**: copies the page address without tracking parameters (utm, fbclid, gclid, si…). Right-click a link for the same.
+- **Notification bar** for screenshots, copied links, crash recovery and download warnings.
+- **Command palette**: new actions for screenshots, clean links, pin/unpin, site settings and reporting a broken site.
+
+### Fixes
+- **Incognito**: the Purify popup no longer links to the all-time stats, which come from normal browsing.
+
+### Project
+- **MIT license**, plus GitHub issue forms for bugs, broken sites and feature ideas.
+
+### Known limitations
+- **HTTPS-only redirects**: a site whose secure address redirects back to its insecure one still loads insecurely, even in HTTPS-only mode.
+- **Extensions not supported yet**: side panels, the downloads, history and bookmarks APIs, and `webRequest`-style blocking. Extension alarms don't persist across restarts.
+- **Full-page screenshots** capture the page's main scroll only, up to 16,384 px tall.
+
 ## 2.2.1
 
 Everything since the 2.0.0 installer.

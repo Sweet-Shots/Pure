@@ -52,6 +52,7 @@ contextBridge.exposeInMainWorld('pure', {
     stopFind: (id) => send('tabs:stop-find', id),
     toggleDevTools: (id) => send('tabs:devtools', id),
     toggleMute: (id) => send('tabs:mute', id),
+    pin: (id, pinned) => send('tabs:pin', id, !!pinned),     // 2.4 — TabState gains `pinned` (pinned tabs sit first)
     showContextMenu: (id) => send('tabs:context-menu', id), // native tab-strip context menu
     // Tab dragged out of the strip and released at screen coords: move it to another window
     // (or a new one). Main decides the target window.
@@ -96,6 +97,9 @@ contextBridge.exposeInMainWorld('pure', {
     // 2.3 — element picker (main/picker.js). mode 'pick' = create a permanent hiding rule, 'zap' = remove
     // the clicked element from this page view only.
     pickElement: (tabId, mode) => send('picker:start', tabId, mode === 'zap' ? 'zap' : 'pick'),
+    // 2.4 — SiteInfo gains `level` ('strict'|'balanced', this host's Purify level).
+    setSiteLevel: (host, level) => invoke('blocking:set-site-level', host, level === 'balanced' ? 'balanced' : 'strict'),
+    reportBroken: (tabId) => send('blocking:report-broken', tabId), // opens a pre-filled GitHub issue in a new tab
   },
 
   // ── 2.2 ────────────────────────────────────────────────────────────────────
@@ -170,5 +174,23 @@ contextBridge.exposeInMainWorld('pure', {
     pauseResume: (id) => send('downloads:pause-resume', id),
     showMenu: () => send('downloads:menu'), // native popup listing recent downloads
     onUpdated: (cb) => on('downloads:updated', cb), // cb(DownloadItem)
+    // 2.4 — DownloadItem gains `openWhenDone` (bool) and `warning` (null | 'script' | 'insecure-program').
+    // A download with a warning is held (paused) until keep/discard; main shows the toast itself.
+    keep: (id) => send('downloads:keep', id),
+    discard: (id) => send('downloads:discard', id),
+    setOpenWhenDone: (id, on) => send('downloads:open-when-done', id, !!on),
+  },
+
+  // ── 2.4 ────────────────────────────────────────────────────────────────────
+  // Tools (main/tools.js — E5). mode: 'visible' | 'full'. Result: { ok: true, path } | { error }.
+  tools: {
+    screenshot: (tabId, mode) => invoke('tools:screenshot', tabId, mode === 'full' ? 'full' : 'visible'),
+    copyCleanLink: (url) => invoke('tools:copy-clean-link', url),  // copies the cleaned URL -> cleaned string|null
+  },
+  // Toasts (main/toast.js — E5). Toast = { id, text, kind:'info'|'warn'|'error', actions:[{id, label}], timeoutMs (0 = sticky) }
+  toasts: {
+    onShow: (cb) => on('toast:show', cb),       // cb(Toast) — same id again = replace
+    onHide: (cb) => on('toast:hide', cb),       // cb(id)
+    action: (id, actionId) => send('toast:action', id, actionId), // actionId 'dismiss' = closed by the user
   },
 });

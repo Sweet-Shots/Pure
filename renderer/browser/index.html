@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="./styles/welcome.css" />
     <link rel="stylesheet" href="./styles/popovers.css" />
     <link rel="stylesheet" href="./styles/groups.css" />
+    <link rel="stylesheet" href="./styles/toasts.css" />
     <link rel="stylesheet" href="./styles/modes.css" />
   </head>
   <body>
@@ -114,6 +115,14 @@
                 <span class="shield-switch-track" aria-hidden="true"></span>
               </span>
             </label>
+            <!-- Per-site level (hidden while Purify is off for the site): button[data-level] + .selected -->
+            <div id="shield-level" class="shield-level-row" role="group" aria-labelledby="shield-level-label">
+              <span id="shield-level-label" class="shield-level-label">Blocking level</span>
+              <div class="shield-seg">
+                <button type="button" class="shield-seg-btn selected" data-level="strict" title="Blocks ads inside pages too, including video ads">Full</button>
+                <button type="button" class="shield-seg-btn" data-level="balanced" title="Lighter blocking for sites that misbehave with Full">Balanced</button>
+              </div>
+            </div>
             <div id="shield-list" class="shield-list" aria-label="Blocked domains"></div>
             <div class="shield-tools">
               <button type="button" class="pop-btn shield-tool" id="shield-pick" data-action="pick-element" title="Pick something on the page to hide it for good"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14 4.1 12 6"/><path d="m5.1 8-2.9-.8"/><path d="m6 12-1.9 2"/><path d="M7.2 2.2 8 5.1"/><path d="M9.037 9.69a.498.498 0 0 1 .653-.653l11 4.5a.5.5 0 0 1-.074.949l-4.349 1.041a1 1 0 0 0-.74.739l-1.04 4.35a.5.5 0 0 1-.95.074z"/></svg><span>Block an element</span></button>
@@ -121,6 +130,7 @@
             </div>
             <div class="shield-foot">
               <a href="#" data-action="open-blocking-stats">View all-time stats</a>
+              <button type="button" id="shield-report" class="shield-report" data-action="report-broken" title="Open a pre-filled report on GitHub (only the site's name is sent)"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"/></svg><span>Report a broken site</span></button>
             </div>
           </div>
 
@@ -187,6 +197,9 @@
           <button type="button" class="nav-btn pw-bar-close" data-action="pw-dismiss" title="Dismiss" aria-label="Dismiss"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
         </div>
       </div>
+
+      <!-- ── Toasts (in flow under the toolbar / pw-bar; 0 px tall when empty — the page moves down while one shows) ── -->
+      <div id="toast-host" role="region" aria-label="Notifications" aria-live="polite"></div><!-- .toast[data-id].toast-kind-info|warn|error › .toast-text, .toast-actions › button.toast-btn[data-action-id], button.toast-close -->
 
       <!-- ── Bookmarks bar ── -->
       <div id="bookmark-sidebar" aria-label="Bookmarks bar">

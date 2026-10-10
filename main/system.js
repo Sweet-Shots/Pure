@@ -31,29 +31,42 @@ function normalSession() {
   return require('./sessions').getSession({ incognito: false });
 }
 
+// Clears the picked kinds of browsing data for the persistent profile. The parts run in parallel and each one is
+// isolated: a failure is logged and reported, it never stops the others. Used by the Clear Data button and by
+// main/privacy.js (clear on exit). Passwords, bookmarks, settings and Purify stats are never touched here.
 async function clearData(what) {
   const picks = what && typeof what === 'object' ? what : {};
   const ses = normalSession();
-  const done = [];
+  const jobs = [];
 
   if (picks.cookies) {
-    await ses.clearStorageData({ storages: PERSISTED_STORAGES });
-    done.push('cookies');
+    jobs.push(['cookies', () => ses.clearStorageData({ storages: PERSISTED_STORAGES })]);
   }
   if (picks.cache) {
-    await ses.clearCache();
-    await ses.clearCodeCaches({});
-    done.push('cache');
+    jobs.push(['cache', async () => {
+      await ses.clearCache();
+      await ses.clearCodeCaches({});
+    }]);
   }
   if (picks.history) {
-    require('./storage').history.clear();
-    done.push('history');
+    jobs.push(['history', () => { require('./storage').history.clear(); }]);
   }
   if (picks.downloads) {
-    require('./downloads').clearFinished();
-    done.push('downloads');
+    jobs.push(['downloads', () => { require('./downloads').clearFinished(); }]);
   }
-  return { ok: true, cleared: done };
+
+  const results = await Promise.allSettled(jobs.map(([, run]) => Promise.resolve().then(run)));
+  const cleared = [];
+  const failed = [];
+  results.forEach((r, i) => {
+    if (r.status === 'fulfilled') {
+      cleared.push(jobs[i][0]);
+    } else {
+      failed.push(jobs[i][0]);
+      log('system: clear failed', jobs[i][0], r.reason && r.reason.message);
+    }
+  });
+  return { ok: failed.length === 0, cleared, failed };
 }
 
 function getSitePermissions() {
@@ -154,4 +167,4 @@ function registerIpc(ipcMain) {
   });
 }
 
-module.exports = { registerIpc };
+module.exports = { registerIpc, clearData };
