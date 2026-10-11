@@ -202,8 +202,18 @@
       <div id="toast-host" role="region" aria-label="Notifications" aria-live="polite"></div><!-- .toast[data-id].toast-kind-info|warn|error › .toast-text, .toast-actions › button.toast-btn[data-action-id], button.toast-close -->
 
       <!-- ── Bookmarks bar ── -->
-      <div id="bookmark-sidebar" aria-label="Bookmarks bar">
-        <div id="bookmark-list"></div>
+      <div id="bookmark-sidebar" aria-label="Bookmarks bar"><!-- the bar scrolls; label.bm-sort is sticky at its right end -->
+        <div id="bookmark-list"></div><!-- div.bookmark-item[data-url] (+ .bm-dragging); while dragging, div.bm-drop-indicator is appended to the bar -->
+        <label class="bm-sort" title="Sort bookmarks">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg>
+          <select id="bookmark-sort" aria-label="Sort bookmarks">
+            <option value="manual">Manual (drag to reorder)</option>
+            <option value="name">Name</option>
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="site">Site</option>
+          </select>
+        </label>
       </div>
 
       <!-- ── Find bar ── -->

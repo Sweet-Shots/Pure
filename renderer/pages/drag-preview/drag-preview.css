@@ -1,0 +1,100 @@
+/* Drag-out preview card. main/drag-preview.js inlines this into the page. The window is transparent: only the card
+   is drawn. The strip height must stay 30px (TITLE_HEIGHT in main/drag-preview.js) and the card 320px wide — the
+   hairline border is drawn by an inset overlay so it never changes the card's size. Colours follow Pure's tokens. */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  overflow: hidden;
+}
+
+:root {
+  --card-bg: #1a1a1a;     /* = --bg-chrome */
+  --shot-bg: #0e0e0e;     /* = --bg-deep */
+  --card-border: #3a3a3a; /* = --border-strong */
+  --strip-line: #2e2e2e;  /* = --border */
+  --card-text: #d0d0d0;   /* = --text */
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --card-bg: #f5f5f5;
+    --shot-bg: #ececec;
+    --card-border: #cfcfcf;
+    --strip-line: #e2e2e2;
+    --card-text: #1f1f1f;
+    color-scheme: light;
+  }
+}
+
+body {
+  font: 500 12px/1 'Segoe UI Variable Text', 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.card {
+  position: relative;
+  width: 320px;
+  box-sizing: border-box;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--card-bg);
+}
+
+.card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px var(--card-border);
+  pointer-events: none;
+}
+
+.shot {
+  display: block;
+  background: var(--shot-bg);
+}
+
+.shot img {
+  display: block;
+  width: 320px;
+}
+
+.shot.sleeping {
+  height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.strip {
+  height: 30px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  color: var(--card-text);
+  border-top: 1px solid var(--strip-line);
+}
+
+.favicon {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.favicon-large {
+  width: 32px;
+  height: 32px;
+  opacity: 0.85;
+}
+
+.title {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

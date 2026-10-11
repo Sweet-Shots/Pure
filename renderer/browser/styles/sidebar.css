@@ -2,6 +2,8 @@
    Bookmarks bar (horizontal, under the toolbar)
    Generated markup: div.bookmark-item[data-url] › img.bookmark-favicon,
    span.bookmark-title, button.bookmark-delete
+   #bookmark-sidebar is the scroller (bookmarks.js relies on that);
+   label.bm-sort › select#bookmark-sort is sticky at its right end.
    ═══════════════════════════════════════════════════════════ */
 
 #bookmark-sidebar {
@@ -29,12 +31,13 @@
   border-radius: 2px;
 }
 
+/* Grows to fill the bar (so the sort control sits at the right end) and never shrinks (so the bar scrolls) */
 #bookmark-list {
   display: flex;
   align-items: center;
+  flex: 1 0 auto;
   gap: 4px;
   padding: 0 8px;
-  min-width: 100%;
 }
 
 /* Empty bar hint */
@@ -107,4 +110,99 @@
 .bookmark-delete .icon {
   width: 10px;
   height: 10px;
+}
+
+/* ── Sort control: label.bm-sort › svg.icon + select#bookmark-sort (sticky at the bar's right end) ── */
+.bm-sort {
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 0 6px 0 8px;
+  border-left: 1px solid var(--border);
+  background: var(--bg-chrome);
+  color: var(--text-dim);
+}
+
+.bm-sort .icon {
+  position: absolute;
+  left: 14px;
+  width: 14px;
+  height: 14px;
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+.bm-sort:hover .icon,
+.bm-sort:focus-within .icon {
+  color: var(--text);
+}
+
+#bookmark-sort {
+  appearance: none;
+  field-sizing: content; /* as wide as the chosen option, not the longest one */
+  height: 24px;
+  max-width: 190px;
+  padding: 0 8px 0 26px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+  transition: background-color 0.1s, color 0.1s;
+}
+
+#bookmark-sort:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+#bookmark-sort:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+#bookmark-sort option {
+  background: var(--bg-raised);
+  color: var(--text);
+}
+
+/* ── Manual-order drag (bookmarks.js): .bm-dragging = the item being moved (it follows the
+   pointer with a transform); .bm-drop-indicator = accent line at the drop slot. bookmarks.js
+   appends the indicator to the bar with position: fixed and sets its box inline, so it works
+   as a vertical line here and as a horizontal one in a vertical list. ── */
+/* Dimmed but opaque, so it stays legible while it slides over its neighbours */
+.bookmark-item.bm-dragging {
+  position: relative;
+  z-index: 2;
+  background: var(--bg-tab);
+  box-shadow: 0 0 0 1px var(--border-strong);
+  color: var(--text-dim);
+  cursor: grabbing;
+  transition: none;
+}
+
+.bookmark-item.bm-dragging .bookmark-favicon {
+  opacity: 0.5;
+}
+
+.bookmark-item.bm-dragging .bookmark-delete {
+  opacity: 0;
+}
+
+.bm-drop-indicator {
+  position: fixed;
+  z-index: 3;
+  width: 2px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--accent);
+  pointer-events: none;
 }

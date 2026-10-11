@@ -15,7 +15,7 @@ const on = (ch, cb) => {
 contextBridge.exposeInMainWorld('pure', {
   // ── Window (main/windows.js) ──────────────────────────────────────────────
   // getInfo() -> { version, windowId, isIncognito, isMaximized, platform }
-  getInfo: () => invoke('win:info'),
+  getInfo: () => invoke('win:info'), // 2.5: + skipWelcome (windows created by dragging a tab out)
   minimize: () => send('win:minimize'),
   toggleMaximize: () => send('win:toggle-maximize'),
   close: () => send('win:close'),
@@ -57,6 +57,8 @@ contextBridge.exposeInMainWorld('pure', {
     // Tab dragged out of the strip and released at screen coords: move it to another window
     // (or a new one). Main decides the target window.
     detach: (id, screenX, screenY) => send('tabs:detach', id, screenX, screenY),
+    // 2.5 (F3): live preview while a tab is dragged outside the strip. op: 'start'|'move'|'end'; x/y = screen coords.
+    dragPreview: (op, id, x, y) => send('tabs:drag-preview', op, id, x, y),
 
     onCreated: (cb) => on('tabs:created', cb),    // cb(TabState)
     onUpdated: (cb) => on('tabs:updated', cb),    // cb(partial TabState, always includes id)
@@ -82,6 +84,10 @@ contextBridge.exposeInMainWorld('pure', {
     list: () => invoke('bookmarks:list'),                 // -> [{url,title,favicon,createdAt}]
     toggle: (bm) => invoke('bookmarks:toggle', bm),       // {url,title,favicon} -> boolean (now bookmarked?)
     remove: (url) => invoke('bookmarks:remove', url),
+    // 2.5: manual order (the stored list order). urls = bookmarks in their new order -> boolean (changed?)
+    // Display sorting is the `bookmarkSort` setting (manual|name|newest|oldest|site); dragging only applies
+    // in manual mode.
+    reorder: (urls) => invoke('bookmarks:reorder', urls),
     onChanged: (cb) => on('bookmarks:changed', cb),       // cb(list)
   },
   // Address-bar suggestions. -> [{type:'history'|'bookmark'|'search', url?, title?, text}]

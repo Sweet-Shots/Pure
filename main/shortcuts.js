@@ -157,8 +157,9 @@ function escape(ctx, wc) {
 
 function newTab(ctx) {
   if (ctx.tabs) {
+    // 2.5: tabs.js puts the caret in the address bar when focusAddressBarOnNewTab is on; when it's off the
+    // home page keeps its own search box focused.
     ctx.tabs.createTab({ active: true });
-    uiCommand(ctx, 'focus-address-bar');
     return true;
   }
   windows.createWindow({});

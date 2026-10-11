@@ -191,6 +191,15 @@
               <span class="toggle-slider" aria-hidden="true"></span>
             </span>
           </div>
+          <div class="setting-item">
+            <label class="setting-label" for="focus-address-bar-toggle">Start new tabs in the address bar
+              <span class="setting-hint">Type right away in the address bar instead of the home page&#39;s search box</span>
+            </label>
+            <span class="toggle-switch">
+              <input type="checkbox" id="focus-address-bar-toggle" role="switch" />
+              <span class="toggle-slider" aria-hidden="true"></span>
+            </span>
+          </div>
         </div>
 
         <div class="settings-section">
@@ -529,6 +538,12 @@
               <span class="toggle-slider" aria-hidden="true"></span>
             </span>
           </div>
+          <div class="setting-item">
+            <div class="setting-label">Import passwords
+              <span class="setting-hint">From a CSV file — or import from another browser in Settings › Import</span>
+            </div>
+            <button type="button" class="btn-reset btn-small btn-icon-text" data-action="import-passwords-csv"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 11V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M2 15h10"/><path d="m9 18 3-3-3-3"/></svg><span>Import passwords…</span></button>
+          </div>
           <div class="info-text">Passwords are encrypted with your Windows account and never leave this device. Pure only fills a password on the exact site it was saved for.</div>
         </div>
 
@@ -681,23 +696,48 @@
           <svg class="icon section-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3v12"/><path d="m8 11 4 4 4-4"/><path d="M8 5H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-4"/></svg>
           <h1 id="import-h">Import</h1>
         </div>
-        <p class="subtitle">Bring your bookmarks and history over from another browser</p>
+        <p class="subtitle">Bring your bookmarks, history and passwords over from another browser</p>
 
         <div class="settings-section">
-          <h2>What to Import</h2>
-          <div class="checkbox-grid">
-            <label class="checkbox"><input type="checkbox" id="import-bookmarks-cb" checked /><span class="checkbox-box" aria-hidden="true"></span>Bookmarks</label>
-            <label class="checkbox"><input type="checkbox" id="import-history-cb" checked /><span class="checkbox-box" aria-hidden="true"></span>History (last 90 days)</label>
-            <label class="checkbox"><input type="checkbox" id="import-settings-cb" /><span class="checkbox-box" aria-hidden="true"></span>Settings &amp; quick links (Pure 1.1.1 only)</label>
+          <h2>Import From</h2>
+          <!-- label.import-row[data-source] (+ .unavailable) › input[type=radio][name="import-source"][value] (disabled when unavailable)
+               + span.import-name + span.import-detail  — flat children, one row per source, 2 columns when there is room -->
+          <div id="import-sources" class="import-sources" role="radiogroup" aria-label="Browser to import from">
+            <div class="empty-state">Looking for browsers…</div>
+          </div>
+          <div class="setting-item import-profile-row"><!-- the whole row hides while the select has [hidden] (one profile) -->
+            <label class="setting-label" for="import-profile-select">Profile
+              <span class="setting-hint">This browser has more than one profile</span>
+            </label>
+            <select id="import-profile-select" hidden></select>
           </div>
         </div>
 
         <div class="settings-section">
-          <h2>Import From</h2>
-          <div id="import-sources" class="list"><!-- .import-row[data-source] › .import-name .import-detail + button[data-action="run-import"] -->
-            <div class="empty-state">Looking for browsers…</div>
+          <h2>What to Import</h2>
+          <div class="checkbox-grid import-what">
+            <label class="checkbox"><input type="checkbox" id="import-bookmarks-cb" checked /><span class="checkbox-box" aria-hidden="true"></span>Bookmarks</label>
+            <label class="checkbox"><input type="checkbox" id="import-history-cb" checked /><span class="checkbox-box" aria-hidden="true"></span>History (last 90 days)</label>
+            <label class="checkbox"><input type="checkbox" id="import-passwords-cb" checked /><span class="checkbox-box" aria-hidden="true"></span>Passwords</label>
+            <label class="checkbox"><input type="checkbox" id="import-settings-cb" /><span class="checkbox-box" aria-hidden="true"></span>Settings &amp; quick links (Pure 1.1.1 only)</label>
           </div>
+          <p id="import-passwords-hint" class="import-hint"></p><!-- shown only when it has text, e.g. why passwords are unavailable for the chosen source -->
+          <div class="section-actions import-actions">
+            <button type="button" id="import-run" class="btn-primary btn-icon-text" data-action="run-import"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg><span>Import</span></button>
+          </div>
+          <!-- text or child lines: div.import-line (+ .import-warning / .import-error); [data-state] = busy | done | warning | error -->
           <div id="import-status" class="import-status" role="status" aria-live="polite"></div>
+          <div class="note"><svg class="icon note-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/></svg><span>Signed-in sessions aren&#39;t imported — other browsers lock them to themselves, and moving them between apps isn&#39;t safe. Your passwords are imported, so signing back in to your accounts in Pure is one click.</span></div>
+        </div>
+
+        <div class="settings-section">
+          <h2>From a File</h2>
+          <div class="import-file-actions">
+            <button type="button" class="btn-reset btn-icon-text" data-action="import-passwords-csv"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></svg><span>Import passwords from CSV…</span></button>
+            <button type="button" class="btn-reset btn-icon-text" data-action="import-bookmarks-html"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 11V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M2 15h10"/><path d="m9 18 3-3-3-3"/></svg><span>Import bookmarks from HTML…</span></button>
+            <button type="button" class="btn-reset btn-icon-text" data-action="export-bookmarks"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.226 20.925A2 2 0 0 0 6 22h12a2 2 0 0 0 2-2V8a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 14 2H6a2 2 0 0 0-2 2v3.127"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="m5 11-3 3"/><path d="m5 17-3-3h10"/></svg><span>Export bookmarks…</span></button>
+          </div>
+          <div class="info-text">Every browser and password manager can export these files. Firefox passwords: about:logins › ⋯ › Export Logins, then import the CSV here. Bookmark HTML files work in both directions.</div>
         </div>
       </section>
 

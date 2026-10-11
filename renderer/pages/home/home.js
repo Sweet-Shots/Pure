@@ -99,6 +99,14 @@
       const url = buildSearchUrl(input.value);
       if (url) location.href = url;
     });
+  }
+
+  // 2.5 — F3: with focusAddressBarOnNewTab on (the default), the browser's address bar keeps the caret and this page
+  // does not take it. With the setting off, the search box takes focus when the page loads, as in 1.1.1.
+  // Called once the settings are known, so a late settings read cannot steal focus from the address bar.
+  function focusSearchIfWanted() {
+    const input = $('search-input');
+    if (!input || !state.settings || state.settings.focusAddressBarOnNewTab !== false) return;
     setTimeout(() => input.focus(), 100);
   }
 
@@ -483,6 +491,7 @@
     api.settings.onChanged((s) => applySettings(s));
     try {
       applySettings(await api.settings.get());
+      focusSearchIfWanted();
     } catch {
       // no settings: the page keeps its markup defaults
     }

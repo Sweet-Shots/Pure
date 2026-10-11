@@ -1,6 +1,6 @@
 {
   "name": "pure-browser",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "A minimal Chromium browser — no bloat, just browsing.",
   "license": "MIT",
   "author": "Pure Browser",
@@ -12,7 +12,7 @@
     "dist": "electron-builder --win nsis"
   },
   "devDependencies": {
-    "electron": "44.7.0",
+    "electron": "https://github.com/castlabs/electron-releases#v44.5.1+wvcus",
     "electron-builder": "26.15.3",
     "lucide-static": "^1.54.0"
   },
@@ -35,6 +35,10 @@
     "directories": {
       "buildResources": "build",
       "output": "dist"
+    },
+    "afterSign": "scripts/evs-sign.js",
+    "electronDownload": {
+      "mirror": "https://github.com/castlabs/electron-releases/releases/download/"
     },
     "asar": true,
     "compression": "maximum",

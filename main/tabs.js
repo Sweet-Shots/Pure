@@ -13,12 +13,14 @@ const menus = require('./menus');
 const security = require('./security');
 const shortcuts = require('./shortcuts');
 const windows = require('./windows');
+const dragPreview = require('./drag-preview'); // 2.5 — F3: window that follows a tab dragged out of the strip
 
 const INTERNAL_PRELOAD = path.join(__dirname, '..', 'preload', 'internal.js');
 const HOME_URL = 'pure://home/';
 const DEFAULT_SEARCH = 'https://duckduckgo.com/?q=';
 const ZOOM_STEPS = [0.25, 0.33, 0.5, 0.67, 0.75, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4, 5];
 const CLOSED_LIMIT = 25;
+const FOCUS_RETAKE_MS = [60, 250, 800]; // 2.5 — F3: when a new tab's page takes the keyboard focus back, checks at these times
 const FLUSH_MS = 50;
 const SWEEP_MS = 60 * 1000;
 const FAVICON_MAX = 100000;
@@ -92,6 +94,11 @@ function homepageUrl() {
   const h = settingsSafe().homepage;
   const ok = typeof h === 'string' && (isHttpUrl(h) || h.startsWith('pure://')) && security.isSafeNavigationUrl(h);
   return ok ? h : HOME_URL;
+}
+
+// 2.5 — F3: a blank new tab shows the home page (pure://home/ or the homepage setting). Such a tab takes the caret.
+function isBlankTabUrl(url) {
+  return typeof url === 'string' && (url.startsWith('pure://home') || url === homepageUrl());
 }
 
 // Web-triggered URLs (popups, context menu, redirects) may only be http(s) or internal pure://.
@@ -534,7 +541,9 @@ class TabManager {
     if (isSettingsUrl(url) && this.tabs.some((t) => isSettingsUrl(t.url))) {
       return this.openSettings(settingsSection(url), active);
     }
-    return this.insertTab({ ...opts, url, active });
+    // 2.5 — F3: a blank new tab (no URL given, or the home page) takes the caret in the address bar.
+    const blank = opts.url === undefined || isBlankTabUrl(url);
+    return this.insertTab({ ...opts, url, active, blank });
   }
 
   insertTab(opts) {
@@ -550,8 +559,39 @@ class TabManager {
     this.tabs.splice(this.settleIndex(idx, tab.pinned), 0, tab);
     this.send('tabs:created', this.stateOf(tab));
     this.scheduleSave();
-    if (opts.active !== false) this.activate(tab.id, { focus: !!opts.focus });
+    if (opts.active !== false) {
+      this.activate(tab.id, { focus: !!opts.focus });
+      // Sent after activation, so the UI handles it once the new tab is the active one.
+      if (opts.blank) this.focusAddressBar();
+    }
     return tab;
+  }
+
+  // 2.5 — F3: puts the caret in the browser UI's address bar (new blank tab, first load of a window). Does nothing
+  // when settings.focusAddressBarOnNewTab is false, and before the UI has loaded (windows.js calls it then).
+  focusAddressBar() {
+    if (this.destroyed || !this.state.uiReady || !this.win || this.win.isDestroyed()) return false;
+    if (settingsSafe().focusAddressBarOnNewTab === false) return false;
+    this.grabFocusForUi();
+    // Chromium can hand the keyboard focus to a page view the first time it is shown, a few ms after the activation
+    // above. Take it back if that happened: a few one-shot checks (no polling) and once more when the page has loaded.
+    // Typing in the bar in the meantime is safe: then the UI holds the focus, so nothing is taken back.
+    const tab = this.activeTab();
+    if (tab && tab.view && !tab.view.webContents.isDestroyed()) {
+      const retake = () => {
+        if (this.destroyed || this.activeId !== tab.id || !tab.view || tab.view.webContents.isDestroyed()) return;
+        if (tab.view.webContents.isFocused()) this.grabFocusForUi();
+      };
+      for (const ms of FOCUS_RETAKE_MS) setTimeout(retake, ms);
+      tab.view.webContents.once('did-finish-load', retake);
+    }
+    return true;
+  }
+
+  // Gives the browser UI the keyboard focus and tells its address bar to take the caret (ui:command, as Ctrl+L does).
+  grabFocusForUi() {
+    try { this.win.webContents.focus(); } catch { /* focus is best effort */ }
+    try { this.win.webContents.send('ui:command', 'focus-address-bar', null); } catch (e) { log('focus address bar failed:', e && e.message); }
   }
 
   activate(id, { focus = false } = {}) {
@@ -609,6 +649,9 @@ class TabManager {
         sandbox: true,
         contextIsolation: true,
         nodeIntegration: false,
+        // 2.5: Node stays off everywhere; this only makes the session's frame preloads (Purify cosmetics, password
+        // fill/generator, picker) run in iframes too. They're sandboxed, and main checks event.senderFrame.
+        nodeIntegrationInSubFrames: true,
         webSecurity: true,
         spellcheck: !!settingsSafe().spellcheck,
         safeDialogs: true,
@@ -1968,6 +2011,21 @@ function registerIpc(ipcMain) {
     const st = windows.senderState(event);
     if (st) windows.detachTab(st, id, x, y);
   });
+  // 2.5 — drag-out preview (main/drag-preview.js, F3). 'start' (id, x, y) snapshots the tab once and shows the
+  // window; 'move' (x, y) follows the pointer (the UI sends at most one per frame); 'end' hides it.
+  ipcMain.on('tabs:drag-preview', (event, op, id, x, y) => {
+    const st = windows.senderState(event);
+    if (!st || !st.tabs || st.tabs.destroyed) return;
+    const finite = (n) => typeof n === 'number' && Number.isFinite(n);
+    if (op === 'start') {
+      const tab = isId(id) && finite(x) && finite(y) ? st.tabs.get(id) : null;
+      if (tab) dragPreview.begin(tab, x, y);
+    } else if (op === 'move') {
+      if (finite(x) && finite(y)) dragPreview.move(x, y);
+    } else if (op === 'end') {
+      dragPreview.end();
+    }
+  });
   ipcMain.on('tabs:mute-others', (event, id) => {
     const m = senderManager(event);
     if (m && isId(id)) m.muteOthers(id);
@@ -2034,6 +2092,7 @@ Object.assign(module.exports, {
   safeUrl,
   searchUrl,
   homepageUrl,
+  isBlankTabUrl,
   findTabByWebContentsId,
   allTabs,
   discardTab,

@@ -17,7 +17,7 @@
     homepage: ['homepage', 'homepageLatitude', 'homepageLongitude', 'homepageTempUnit', 'homepageTimeFormat',
       'homeWidgets', 'newsTopics', 'newsSources', 'newsImages', 'showHomeStats'],
     appearance: ['accentColor', 'theme', 'showWelcomeAnimation', 'showStatusBar', 'showBookmarksBar',
-      'forceDarkWeb', 'verticalTabs', 'focusMode'],
+      'forceDarkWeb', 'verticalTabs', 'focusMode', 'focusAddressBarOnNewTab'],
     search: ['searchEngine', 'searchSuggestions'],
     privacy: ['restoreSession', 'spellcheck', 'blockingEnabled', 'blockingLevel', 'blockCookieBanners', 'dohMode', 'dohProvider', 'dohCustomUrl',
       'httpsMode', 'clearOnExitHistory', 'clearOnExitCookies', 'clearOnExitCache', 'clearOnExitDownloads'],
@@ -68,6 +68,8 @@
     'clear-on-exit-cache-cb': ['clearOnExitCache', 'bool'],
     'clear-on-exit-downloads-cb': ['clearOnExitDownloads', 'bool'],
     'risky-downloads-toggle': ['warnRiskyDownloads', 'bool'],
+    // 2.5
+    'focus-address-bar-toggle': ['focusAddressBarOnNewTab', 'bool'],
     'blocking-level-select': ['blockingLevel', 'value'],
     'force-dark-toggle': ['forceDarkWeb', 'bool'],
     'vertical-tabs-toggle': ['verticalTabs', 'bool'],

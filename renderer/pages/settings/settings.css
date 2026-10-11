@@ -206,11 +206,14 @@ select {
   min-width: 0;
   padding: 40px;
   overflow-y: auto;
+  scrollbar-gutter: stable both-edges; /* same centre whether or not a section scrolls */
 }
 
+/* The column is centred in the space right of the sidebar at every width. */
 .tab-content {
   display: none;
   max-width: 760px;
+  margin-inline: auto;
   scroll-margin-top: 40px; /* = .content padding: a #section hash scroll lands at scrollTop 0 */
 }
 
@@ -1294,28 +1297,96 @@ svg.perf-favicon {
   color: var(--text-dim);
 }
 
-/* ── Import: .import-row[data-source] › .import-name .import-detail + button ── */
-.import-row {
+/* ── Import › sources: #import-sources.import-sources[role=radiogroup] ›
+   label.import-row[data-source] (+ .unavailable) › input[type=radio] + .import-name + .import-detail
+   (flat children on a grid; a trailing button still lands in the "action" column) ── */
+.import-sources {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas:
-    "name   action"
-    "detail action";
-  align-items: center;
-  column-gap: 16px;
-  row-gap: 2px;
-  min-height: 56px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--hairline);
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 6px;
 }
 
-.import-row:last-child {
-  border-bottom: none;
+.import-sources > .empty-state {
+  grid-column: 1 / -1;
+}
+
+.import-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "radio name   action"
+    "radio detail action";
+  align-items: center;
+  column-gap: 12px;
+  row-gap: 1px;
+  min-height: 52px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-sunken);
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.import-row:hover {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+
+.import-row:has(> input:checked) {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.import-row:has(> input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.import-row.unavailable,
+.import-row:has(> input:disabled) {
+  border-style: dashed;
+  background: transparent;
+  cursor: default;
+}
+
+.import-row.unavailable:hover,
+.import-row:has(> input:disabled):hover {
+  border-color: var(--border);
+}
+
+.import-row > input[type="radio"] {
+  grid-area: radio;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  border: 1px solid var(--checkbox-border);
+  border-radius: 50%;
+  background: var(--bg-input);
+  cursor: inherit;
+  transition: background-color 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.import-row > input[type="radio"]:checked {
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow: inset 0 0 0 4px var(--bg-input);
+}
+
+.import-row > input[type="radio"]:focus-visible {
+  outline: none; /* the row shows the ring */
+}
+
+.import-row > input[type="radio"]:disabled {
+  opacity: 0.5;
 }
 
 .import-name {
   grid-area: name;
   min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   font-size: 13px;
   font-weight: 500;
   color: var(--text);
@@ -1329,6 +1400,20 @@ svg.perf-favicon {
   text-overflow: ellipsis;
   font-size: 12px;
   color: var(--text-dim);
+}
+
+.import-detail:empty {
+  display: none;
+}
+
+.import-row.unavailable .import-name,
+.import-row:has(> input:disabled) .import-name {
+  color: var(--text-dim);
+}
+
+.import-row.unavailable .import-detail,
+.import-row:has(> input:disabled) .import-detail {
+  color: var(--text-faint);
 }
 
 .import-row > button {
@@ -1345,6 +1430,137 @@ svg.perf-favicon {
   background: var(--bg-btn);
   color: var(--text-dim);
   opacity: 1;
+}
+
+/* Profile row: hidden with its label while the select is [hidden] (one profile) */
+.import-profile-row {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--hairline);
+}
+
+.import-profile-row:has(> select[hidden]) {
+  display: none;
+}
+
+#import-profile-select {
+  max-width: 260px;
+}
+
+/* ── Import › what: four checkboxes, two columns ── */
+.import-what {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+/* Disabled checkboxes (e.g. passwords for Firefox, settings for anything but Pure 1.1.1) */
+.checkbox:has(> input:disabled) {
+  color: var(--text-dim);
+  cursor: default;
+}
+
+.checkbox > input:disabled,
+.checkbox > input:disabled + .checkbox-box {
+  cursor: default;
+}
+
+.checkbox > input:disabled + .checkbox-box {
+  opacity: 0.5;
+}
+
+/* #import-passwords-hint: one line under the checkboxes, only when it has text */
+.import-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
+.import-hint:empty {
+  display: none;
+}
+
+/* ── Import › status: text or div.import-line (+ .import-warning / .import-error) children;
+   [data-state] = busy | done | warning | error ── */
+#import-status {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-sunken);
+  color: var(--text);
+}
+
+#import-status:empty {
+  display: none;
+}
+
+#import-status[data-state="busy"] {
+  color: var(--text-dim);
+}
+
+#import-status[data-state="done"] {
+  border-color: color-mix(in srgb, var(--success) 45%, var(--border));
+  color: var(--success-text);
+}
+
+#import-status[data-state="warning"] {
+  border-color: color-mix(in srgb, var(--warning-text) 45%, var(--border));
+}
+
+#import-status[data-state="error"],
+#import-status.error {
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--border));
+  color: var(--danger-text);
+}
+
+#import-status[data-state="warning"]:not(:has(> *)) {
+  color: var(--warning-text);
+}
+
+.import-line {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.import-warning,
+.import-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.import-warning {
+  color: var(--warning-text);
+}
+
+.import-error {
+  color: var(--danger-text);
+}
+
+/* Lucide triangle-alert as a mask, so the lines stay text-only for JS */
+.import-warning::before,
+.import-error::before {
+  content: '';
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3'/%3E%3Cpath d='M12 9v4'/%3E%3Cpath d='M12 17h.01'/%3E%3C/svg%3E") center / 12px 12px no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3'/%3E%3Cpath d='M12 9v4'/%3E%3Cpath d='M12 17h.01'/%3E%3C/svg%3E") center / 12px 12px no-repeat;
+}
+
+/* ── Import › from a file ── */
+.import-file-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .import-status {

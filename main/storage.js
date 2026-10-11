@@ -82,6 +82,9 @@ const SETTINGS_DEFAULTS = {
   clearOnExitDownloads: false,  // the download list only, never the files
   purifyBalancedSites: [],      // hosts where Purify runs at the Balanced level (no in-page scriptlets)
   warnRiskyDownloads: true,     // confirm before keeping script / shortcut files and insecure (http) programs
+  // 2.5 (ships as 2.4.0)
+  bookmarkSort: 'manual',       // manual (drag to reorder) | name | newest | oldest | site — display order only
+  focusAddressBarOnNewTab: true, // new tabs / windows put the caret in the address bar, not the home page's box
 };
 
 const WIDGET_IDS = ['news', 'weather', 'reading', 'notes'];
@@ -341,6 +344,8 @@ const VALIDATORS = {
     return [...out].slice(0, 500);
   },
   warnRiskyDownloads: boolOnly,
+  bookmarkSort: oneOf(['manual', 'name', 'newest', 'oldest', 'site']),
+  focusAddressBarOnNewTab: boolOnly,
 };
 
 let settingsState = clone(SETTINGS_DEFAULTS);
@@ -484,7 +489,7 @@ function loadBookmarks(raw) {
       createdAt: Number.isFinite(item.createdAt) ? item.createdAt : Date.now(),
     });
   }
-  out.sort((a, b) => a.createdAt - b.createdAt);
+  // 2.5: the stored order is the manual order (files written before 2.5 are already oldest-first).
   return out.length > MAX_BOOKMARKS ? out.slice(out.length - MAX_BOOKMARKS) : out;
 }
 
@@ -520,6 +525,25 @@ const bookmarks = {
     const u = httpUrl(url);
     return u ? removeBookmark(u) : false;
   },
+  // 2.5: sets the manual order. `urls` lists bookmarks in their new order; bookmarks it leaves out keep their
+  // relative order after the listed ones. Unknown urls are ignored. -> true when the order changed.
+  reorder(urls) {
+    if (!Array.isArray(urls)) return false;
+    const byUrl = new Map(bookmarkList.map((b) => [b.url, b]));
+    const next = [];
+    const used = new Set();
+    for (const raw of urls.slice(0, MAX_BOOKMARKS)) {
+      const u = typeof raw === 'string' ? httpUrl(raw) : null;
+      if (!u || used.has(u) || !byUrl.has(u)) continue;
+      used.add(u);
+      next.push(byUrl.get(u));
+    }
+    for (const b of bookmarkList) if (!used.has(b.url)) next.push(b);
+    if (next.every((b, i) => b === bookmarkList[i])) return false;
+    bookmarkList.splice(0, bookmarkList.length, ...next);
+    bookmarksChanged();
+    return true;
+  },
   // Bulk import (main/importer.js). Dedupes by url against the existing list and within the batch,
   // respects MAX_BOOKMARKS, keeps the list sorted by createdAt and broadcasts once. -> number added.
   importMany(items) {
@@ -542,7 +566,6 @@ const bookmarks = {
     }
     if (!fresh.length) return 0;
     for (const b of fresh) bookmarkList.push(b);
-    bookmarkList.sort((a, b) => a.createdAt - b.createdAt);
     bookmarksChanged();
     return fresh.length;
   },
@@ -1001,6 +1024,11 @@ function registerIpc(ipcMain) {
   ipcMain.handle('bookmarks:toggle', (event, bm) => {
     if (!isChromeSender(event)) forbidden();
     return bookmarks.toggle(bm);
+  });
+
+  ipcMain.handle('bookmarks:reorder', (event, urls) => {
+    if (!isBrowserOrInternal(event)) forbidden();
+    return bookmarks.reorder(urls);
   });
 
   ipcMain.handle('bookmarks:remove', (event, url) => {

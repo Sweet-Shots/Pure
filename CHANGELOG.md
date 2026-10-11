@@ -1,5 +1,42 @@
 # Pure Browser — Changelog
 
+## 2.4.0
+
+### Streaming
+- **Spotify, Netflix, Disney+ and other protected streams can play.** Pure now ships with Widevine, the DRM module those sites need, by using castLabs' Widevine-enabled build of Electron. It loads only when a page asks for it.
+
+### Import
+- **More browsers**: Opera, Opera GX, Vivaldi, Chromium and Firefox, alongside Chrome, Edge and Brave. Every profile of a browser can be picked, not just the default one.
+- **Passwords**: imported from Chromium-based browsers. Chrome locks newer passwords so only Chrome can read them; Pure counts those and explains how to bring them over with Chrome's Export.
+- **Password files**: import CSV exports from Chrome, Edge, Firefox, Bitwarden, 1Password, LastPass and others (Settings › Import or Settings › Passwords).
+- **Bookmark files**: import and export bookmarks as an HTML file, the format every browser reads.
+- Importing twice adds no duplicates. Signed-in sessions aren't imported; since your passwords come across, signing back in is one click.
+
+### Passwords
+- **Strong password generator**: on sign-up and change-password forms, Pure offers "Use a strong password", fills it in and offers to save it.
+- **Works inside embedded frames**: saving, filling and the generator now also work in login forms embedded from other sites.
+
+### Bookmarks
+- **Sort the bookmarks bar**: Manual, Name, Newest, Oldest or Site.
+- **Drag to reorder** in Manual mode, or press Alt+↑/↓ on a focused bookmark. Arrow keys move between bookmarks.
+
+### Tabs & windows
+- **Type right away**: new tabs, new windows and startup put the cursor in the address bar. Turn it off in Settings › Appearance.
+- **Tab drag preview**: dragging a tab out of the strip shows a live preview following the cursor.
+- **No startup animation** on windows made by dragging a tab out.
+
+### Purify
+- **Hides ads inside embedded frames too**, not just on the main page.
+
+### Settings
+- **Centered pages** at every window width.
+- **Redesigned Import page** with every browser, profile picker, and file import/export.
+
+### Known limitations
+- **Netflix and some other services** may refuse playback until Pure's build is signed by castLabs (a one-time setup on the release side). Spotify's DRM check passes.
+- **Security updates**: the Widevine build of Electron is 44.5.1, slightly behind the newest 44.7.0. Pure will move to newer builds as castLabs releases them.
+- **Firefox passwords** aren't read directly; export a CSV from Firefox (about:logins › ⋯ › Export) and import it.
+
 ## 2.3.0
 
 ### Extensions

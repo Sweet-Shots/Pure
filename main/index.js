@@ -70,7 +70,9 @@ function registerIpc() {
     // 2.3 — blocker
     'filterlists', 'cosmetics', 'picker',
     // 2.4
-    'privacy', 'tools', 'toast']) {
+    'privacy', 'tools', 'toast',
+    // 2.5
+    'drm']) {
     const mod = load(name);
     if (mod && typeof mod.registerIpc === 'function') {
       attempt(`${name}.registerIpc`, () => mod.registerIpc(ipcMain));
@@ -106,6 +108,15 @@ async function boot() {
         log(`[main] ${name}.init failed:`, err);
       }
     }
+  }
+
+  // 2.5: Widevine (main/drm.js) — wait briefly for the CDM so the first pages can play protected media; never
+  // hold startup longer than 3 s (the first run downloads the CDM in the background).
+  try {
+    const drm = load('drm');
+    if (drm && typeof drm.init === 'function') await withTimeout(Promise.resolve().then(() => drm.init()), 3000);
+  } catch (err) {
+    log('[main] drm.init failed:', err);
   }
 
   const windows = load('windows');

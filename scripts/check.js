@@ -42,7 +42,7 @@ loader page-freeze statusbar status-text welcome-overlay welcome-version welcome
 welcome-status btn-shield shield-count shield-popover shield-host shield-toggle shield-blocked shield-list
 site-popover site-host site-status site-perms site-cookies site-blocked site-zoom btn-reader ext-actions pw-bar
 pw-bar-text palette palette-input palette-list palette-empty split-divider focus-reveal group-editor group-title
-group-colors shield-pick shield-zap toast-host shield-level shield-report`.split(/\s+/);
+group-colors shield-pick shield-zap toast-host shield-level shield-report bookmark-sort`.split(/\s+/);
 const indexHtml = fs.readFileSync(path.join(root, 'renderer/browser/index.html'), 'utf8');
 for (const id of REQUIRED_IDS) {
   if (!new RegExp(`id=["']${id}["']`).test(indexHtml)) fail(`browser/index.html missing #${id}`);
@@ -61,7 +61,7 @@ const PAGE_IDS = {
     vertical-tabs-toggle focus-mode-toggle update-status update-progress auto-update-toggle filter-lists
     filter-lists-groups fl-add-url fl-status my-filters my-filters-input my-filters-status
     sites sites-search sites-list https-mode-select clear-on-exit-history-cb clear-on-exit-cookies-cb clear-on-exit-cache-cb
-    clear-on-exit-downloads-cb risky-downloads-toggle`,
+    clear-on-exit-downloads-cb risky-downloads-toggle import-passwords-cb import-profile-select focus-address-bar-toggle`,
   'renderer/pages/error/index.html': `error-continue-http`,
   'renderer/pages/reader/index.html': `reader-toolbar reader-article reader-title reader-meta reader-content reader-error`,
 };

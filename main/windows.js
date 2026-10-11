@@ -11,6 +11,7 @@ const logger = require('./logger');
 const security = require('./security');
 const shortcuts = require('./shortcuts');
 const tabsModule = require('./tabs');
+const dragPreview = require('./drag-preview'); // 2.5 — F3: the window that follows a dragged-out tab
 
 const UI_URL = 'pure://browser/index.html';
 const UI_PRELOAD = path.join(__dirname, '..', 'preload', 'chrome.js');
@@ -123,12 +124,14 @@ function wireTheme() {
 
 // ── Creating windows ─────────────────────────────────────────────────────
 
-// createWindow({ incognito, urls, saved, pinned, bounds, empty })
+// createWindow({ incognito, urls, saved, pinned, bounds, empty, detached })
 //   urls:   http(s) URLs opened as tabs (first one active); default is one home tab
 //   saved:  restore data from sanitizeSaved() (tabs, activeIndex, groups, split); tabs open lazily
 //   pinned: [{url, title}] pinned tabs opened first, unloaded (2.4); ignored when `saved` is given
 //   bounds: { x, y } optional screen position
 //   empty:  create no tabs (used when tabs are moved in right after creation)
+//   detached: 2.5 — the window was made by dragging a tab out: no welcome animation (win:info.skipWelcome) and
+//           no address-bar focus (the dragged tab is not a new tab)
 function createWindow(opts = {}) {
   const incognito = !!opts.incognito;
   const id = nextWindowId++;
@@ -172,6 +175,8 @@ function createWindow(opts = {}) {
     lastShot: null,
     htmlFullscreen: 0,
     lastFocus: Date.now(),
+    detached: !!opts.detached, // 2.5 — F3: made by a drag-out (no welcome, no address-bar focus)
+    uiReady: false,            // the browser UI has loaded once (TabManager.focusAddressBar waits for it)
   };
   states.set(win, state);
   state.tabs = new tabsModule.TabManager(win, state);
@@ -209,6 +214,7 @@ function createWindow(opts = {}) {
   });
   shortcuts.attach(wc, win, state.tabs);
 
+  wc.once('did-finish-load', () => onUiLoaded(state));
   wc.loadURL(UI_URL).catch((e) => log('UI load failed:', e && e.message));
 
   if (opts.saved && Array.isArray(opts.saved.tabs) && opts.saved.tabs.length) {
@@ -253,6 +259,15 @@ function restoreTabs(mgr, saved) {
   mgr.activate(target.id, { focus: false });
 }
 
+// The browser UI of a window has loaded (first time only). When the window's active tab is a blank new tab (startup,
+// Ctrl+N, a restored home page), the caret goes to the address bar if focusAddressBarOnNewTab is on.
+function onUiLoaded(state) {
+  state.uiReady = true;
+  if (state.detached || !state.tabs || state.tabs.destroyed) return;
+  const active = state.tabs.activeTab();
+  if (active && tabsModule.isBlankTabUrl(active.url)) state.tabs.focusAddressBar();
+}
+
 function onWindowClosed(state) {
   states.delete(state.win);
   try {
@@ -263,6 +278,7 @@ function onWindowClosed(state) {
   if (state.incognito) {
     try { sessions.destroyIncognitoSession(state.id); } catch (e) { log('destroy session failed:', e && e.message); }
   }
+  if (states.size === 0) dragPreview.destroy(); // 2.5 — no browser window left: release the preview window
   scheduleSessionSave();
 }
 
@@ -394,6 +410,7 @@ function newWindowPosition(x, y) {
 // window at that point. Live views move only between windows sharing a session; otherwise the tab is
 // suspended (history kept) and restored on activation in the new session.
 function detachTab(srcState, tabId, screenX, screenY) {
+  dragPreview.end(); // 2.5 — the drop (or a drop back on the strip) ends the drag preview
   if (!Number.isFinite(screenX) || !Number.isFinite(screenY) || !Number.isInteger(tabId)) return;
   const src = srcState.tabs;
   if (!src || src.destroyed || !src.get(tabId)) return;
@@ -419,7 +436,12 @@ function detachTab(srcState, tabId, screenX, screenY) {
   let dest = target;
   if (!dest) {
     const pos = newWindowPosition(screenX, screenY);
-    const win = createWindow({ incognito: srcState.incognito, empty: true, bounds: pos || undefined });
+    const win = createWindow({
+      incognito: srcState.incognito,
+      empty: true,
+      bounds: pos || undefined,
+      detached: true, // 2.5 — no welcome animation for a window made by dragging a tab out
+    });
     dest = getState(win);
   }
   dest.tabs.adopt(tab, { active: true, focus: true });
@@ -767,6 +789,7 @@ function registerIpc(ipc) {
       isIncognito: st.incognito,
       isMaximized: st.win.isMaximized(),
       platform: process.platform,
+      skipWelcome: st.detached === true, // 2.5 — welcome.js skips the overlay (windows made by a drag-out)
     };
   });
   ipc.on('win:minimize', (event) => {

@@ -88,10 +88,16 @@ if (location.protocol === 'pure:') {
     },
     // main/importer.js
     importer: {
-      // -> [{id:'chrome'|'edge'|'brave'|'pure1', name, available, detail}]
+      // 2.5: Source = {id, name, browser, available, detail, profiles: [{id, name}], supports: {bookmarks,
+      //   history, passwords, settings}}. browser: chrome|edge|brave|opera|opera-gx|vivaldi|chromium|firefox|pure1.
       detect: () => invoke('import:detect'),
-      // what: {bookmarks, history, settings (pure1 only)} -> {bookmarks:n, history:n, settings:bool} (+ warning?) | {error}
+      // what: {profile?, bookmarks, history, passwords, settings (pure1 only)} ->
+      //   {bookmarks:n, history:n, passwords:n, settings:bool, warnings:[string]} | {error}
       run: (id, what) => invoke('import:run', id, what || {}),
+      // 2.5: native file picker. kind: 'passwords-csv' | 'bookmarks-html' -> {passwords:n}|{bookmarks:n}|{error}|null (cancelled)
+      importFile: (kind) => invoke('import:file', kind),
+      // 2.5: native save dialog; writes bookmarks as a Netscape HTML file -> {ok, count, path}|{error}|null
+      exportBookmarks: () => invoke('export:bookmarks'),
     },
 
     // ── 2.2 ──────────────────────────────────────────────────────────────────

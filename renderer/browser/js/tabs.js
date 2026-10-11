@@ -22,6 +22,8 @@ let dragging = false; // while true the drag owns the DOM order; renderStrip() w
 let press = null; // pointer state from pointerdown until pointerup / pointercancel
 let justDragged = false; // swallows the click that can follow a drag
 let vertical = false; // html.vertical-tabs
+let previewRaf = 0; // 2.5 — pending animation frame for a drag-preview move (one per frame at most)
+let previewPos = null; // 2.5 — latest pointer position while the drag preview is up
 
 // ── Rendering ────────────────────────────────────────────
 
@@ -552,13 +554,86 @@ function endDrag(p) {
   if (dropEl) dropEl.classList.remove('visible');
 }
 
+// True when the pointer has left the strip for a detach: outside this browser window, or past the strip's cross axis
+// (below it, or beside the column in vertical mode).
+function leftStrip(e) {
+  const sr = scroller.getBoundingClientRect();
+  const outsideWindow =
+    e.screenX < window.screenX ||
+    e.screenX > window.screenX + window.outerWidth ||
+    e.screenY < window.screenY ||
+    e.screenY > window.screenY + window.outerHeight;
+  const offStrip = vertical
+    ? e.clientX < sr.left - DETACH_BELOW_PX || e.clientX > sr.right + DETACH_BELOW_PX
+    : e.clientY > sr.bottom + DETACH_BELOW_PX;
+  return outsideWindow || offStrip;
+}
+
+// ── Drag-out preview (2.5 — F3) ─────────────────────────────
+// While the tab is outside the strip, main shows a window that follows the pointer. The UI sends 'start' once,
+// 'move' at most once per animation frame, and 'end' when the pointer comes back, on drop, or on Esc.
+// Without the preload channel (pure.tabs.dragPreview missing) this is a no-op.
+
+function previewCall(op, id, x, y) {
+  pure.tabs.dragPreview?.(op, id, x, y);
+}
+
+function showPreview(p, e) {
+  const t = S.tabs.get(p.k);
+  if (!t) return;
+  p.preview = true;
+  previewCall('start', t.id, e.screenX, e.screenY);
+}
+
+function hidePreview(p) {
+  if (!p || !p.preview) return;
+  p.preview = false;
+  if (previewRaf) {
+    cancelAnimationFrame(previewRaf);
+    previewRaf = 0;
+  }
+  previewPos = null;
+  previewCall('end');
+}
+
+function queuePreviewMove(e) {
+  previewPos = { x: e.screenX, y: e.screenY };
+  if (previewRaf) return;
+  previewRaf = requestAnimationFrame(() => {
+    previewRaf = 0;
+    if (press && press.preview && previewPos) previewCall('move', null, previewPos.x, previewPos.y);
+  });
+}
+
+function updatePreview(e) {
+  const p = press;
+  const out = leftStrip(e);
+  if (out && !p.preview) showPreview(p, e);
+  else if (!out && p.preview) hidePreview(p);
+  if (p.preview) queuePreviewMove(e);
+}
+
+// Esc during a drag cancels it: the tab goes back to its place and nothing is detached.
+function cancelDrag(p) {
+  p.cancelled = true;
+  hidePreview(p);
+  endDrag(p);
+  renderStrip();
+}
+
+function onKeyDown(e) {
+  if (e.key !== 'Escape' || !press || !press.started || press.cancelled) return;
+  cancelDrag(press);
+}
+
 function onPointerMove(e) {
-  if (!press || e.pointerId !== press.pointerId) return;
+  if (!press || e.pointerId !== press.pointerId || press.cancelled) return;
   if (!press.started) {
     if (Math.hypot(e.clientX - press.x, e.clientY - press.y) < DRAG_THRESHOLD_PX) return;
     beginDrag(e);
   }
   moveDrag(e);
+  updatePreview(e);
 }
 
 function onPointerUp(e) {
@@ -566,25 +641,16 @@ function onPointerUp(e) {
   if (!p || e.pointerId !== p.pointerId) return;
   press = null;
   if (!p.started) return; // plain click: the click handler activates the tab
-  endDrag(p);
+  if (!p.cancelled) endDrag(p);
+  hidePreview(p);
   justDragged = true;
   setTimeout(() => {
     justDragged = false;
   }, 0);
+  if (p.cancelled) return; // Esc already put the strip back
 
   const t = S.tabs.get(p.k);
-  const sr = scroller.getBoundingClientRect();
-  const outsideWindow =
-    e.screenX < window.screenX ||
-    e.screenX > window.screenX + window.outerWidth ||
-    e.screenY < window.screenY ||
-    e.screenY > window.screenY + window.outerHeight;
-  // Leaving the strip across its cross axis (below it, or beside the column in vertical mode) detaches.
-  const offStrip = vertical
-    ? e.clientX < sr.left - DETACH_BELOW_PX || e.clientX > sr.right + DETACH_BELOW_PX
-    : e.clientY > sr.bottom + DETACH_BELOW_PX;
-
-  if (outsideWindow || offStrip) {
+  if (leftStrip(e)) {
     renderStrip(); // restore the order; main will remove the tab if it moved
     if (t) pure.tabs.detach(t.id, e.screenX, e.screenY);
     return;
@@ -606,7 +672,8 @@ function onPointerCancel(e) {
   if (!p || e.pointerId !== p.pointerId) return;
   press = null;
   if (p.started) {
-    endDrag(p);
+    hidePreview(p);
+    if (!p.cancelled) endDrag(p);
     renderStrip();
   }
 }
@@ -626,6 +693,8 @@ export function initTabStrip() {
   window.addEventListener('pointermove', onPointerMove);
   window.addEventListener('pointerup', onPointerUp);
   window.addEventListener('pointercancel', onPointerCancel);
+  // 2.5 — Esc cancels a drag (and hides the drag-out preview).
+  window.addEventListener('keydown', onKeyDown, true);
   // Group state changed (groups.js): re-render the chips and the group flags on every tab.
   on('groups', renderStrip);
 }

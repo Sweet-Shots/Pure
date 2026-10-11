@@ -30,7 +30,8 @@ Pure is a minimal, fast Chromium-based browser for Windows. It's built to stay l
 - **Reader mode, picture-in-picture, focus mode, screenshots and clean links**, and light and dark themes.
 - **A home page you can customize**: news, weather, notes and Continue reading. Or hide it all.
 - **Chrome Web Store extensions**: popular ones like Dark Reader, SponsorBlock and Return YouTube Dislike work.
-- **Import** from Chrome, Edge and Brave.
+- **Streaming works**: Spotify and other protected music and video play (Widevine).
+- **Import** bookmarks, history and passwords from Chrome, Edge, Brave, Opera, Opera GX, Vivaldi, Chromium and Firefox, or from CSV / HTML files.
 
 Found a site Purify breaks? Use **Report a broken site** in the shield, or [open an issue](https://github.com/Sweet-Shots/Pure/issues/new/choose).
 

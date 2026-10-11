@@ -340,6 +340,49 @@
     await refresh();
   }
 
+  // ── Import ──────────────────────────────────────────────────────────────────
+  // The importer (main/importer.js) owns the file picker and the CSV parsing; this page only starts it and reports
+  // the result. Result: null (cancelled) | {passwords: n} | {error}. Error codes are mapped to sentences; text from
+  // the file is never shown as HTML.
+  const IMPORT_ERRORS = new Map([
+    ['encryption-unavailable', "Passwords can't be saved on this device, so none were imported."],
+    ['passwords-disabled', 'Turn on "Offer to save passwords" to import passwords.'],
+    ['unreadable', 'Saved passwords could not be read, so nothing was imported.'],
+  ]);
+  let importing = false;
+
+  function setImportStatus(text) {
+    const node = $('pw-import-status');
+    if (node) node.textContent = text;
+  }
+
+  async function importCsv() {
+    const importer = window.pureInternal && window.pureInternal.importer;
+    if (importing || !importer || typeof importer.importFile !== 'function') return;
+    importing = true;
+    try {
+      const result = await importer.importFile('passwords-csv');
+      if (!result) return; // the file dialog was cancelled
+      if (result.error) {
+        const code = String(result.error);
+        const text = IMPORT_ERRORS.get(code) || code.slice(0, 300);
+        setImportStatus(text);
+        flash('Could not import passwords');
+        return;
+      }
+      const n = Number.isFinite(result.passwords) ? result.passwords : 0;
+      const text = n ? `Imported ${n} ${n === 1 ? 'password' : 'passwords'}.` : 'No new passwords to import.';
+      setImportStatus(text);
+      flash(text);
+      await refresh();
+    } catch {
+      setImportStatus('Import failed.');
+      flash('Import failed');
+    } finally {
+      importing = false;
+    }
+  }
+
   const actions = {
     'reveal-password': (node) => toggleReveal(node.closest('.pw-row[data-id]').dataset.id),
     'copy-password': (node) => copyPassword(node.closest('.pw-row[data-id]').dataset.id),
@@ -348,6 +391,7 @@
     'save-password-edit': (node) => saveEdit(node.closest('.pw-row[data-id]').dataset.id),
     'cancel-password-edit': () => cancelEdit(),
     'remove-never': (node) => removeNever(node),
+    'import-passwords-csv': () => importCsv(),
   };
 
   // ── Wiring ──────────────────────────────────────────────────────────────────
